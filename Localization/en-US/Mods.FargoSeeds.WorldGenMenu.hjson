@@ -35,7 +35,7 @@ BothEvils: {
 
 BothOres: {
 	Label: Both Ores
-	Tooltip: Generates all pre-Hardmode ore variations in the same world. (From Drunk Seed)
+	Tooltip: Generates both ore sets during world creation and altar smashing. (From Drunk Seed)
 }
 
 WavyCaves: {
