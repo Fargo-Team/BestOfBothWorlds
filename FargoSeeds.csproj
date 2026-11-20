@@ -1,16 +1,16 @@
-﻿
-<Project Sdk="Microsoft.NET.Sdk">
-  <Import Project="..\tModLoader.targets" />
-  <PropertyGroup>
-    <AssemblyName>FargoSeeds</AssemblyName>
-    <LangVersion>latest</LangVersion>
-  </PropertyGroup>
-  <ItemGroup>
-    <None Remove="description_workshop.txt" />
-  </ItemGroup>
-  <ItemGroup>
-    <Reference Include="StructureHelper">
-      <HintPath>lib\StructureHelper.dll</HintPath>
-    </Reference>
-  </ItemGroup>
+﻿<Project Sdk="Tomat.Terraria.ModLoader.Sdk/2.1.2">
+
+	<PropertyGroup>
+		<AssemblyName>FargoSeeds</AssemblyName>
+		<LangVersion>latest</LangVersion>
+	</PropertyGroup>
+
+	<!-- Publicizer -->
+	<ItemGroup>
+		<Publicize Include="FNA;ReLogic;MonoMod.RuntimeDetour" IncludeCompilerGeneratedMembers="false" IncludeVirtualMembers="false" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<Reference Include="StructureHelper" HintPath="lib\StructureHelper.dll"/>
+	</ItemGroup>
 </Project>
