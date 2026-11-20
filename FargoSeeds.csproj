@@ -11,6 +11,10 @@
 	</ItemGroup>
 
 	<ItemGroup>
-		<Reference Include="StructureHelper" HintPath="lib\StructureHelper.dll"/>
+		<Reference Include="StructureHelper" HintPath="lib\StructureHelper.dll" />
+	</ItemGroup>
+
+	<ItemGroup>
+	  <Folder Include="Assets\Images\UI\" />
 	</ItemGroup>
 </Project>
