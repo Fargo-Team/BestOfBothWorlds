@@ -11,13 +11,22 @@ namespace FargoSeeds;
 public class FargoSeeds : Mod
 {
     public static Mod Mod;
+
     public override void Load()
     {
         Mod = this;
-        base.Load();
     }
+
+    // Zoey: Unsure how much I can mess with ModCall stuff; I've opted to not adjust the args, but do not Priority
+    // is available for any element (also make the float range not a list???? hello??? like even if for some reason
+    // you wanted this we HAVE Terraria.Utilities.Terraria.Utilities.FloatRange,) please do improve this.
     public override object Call(params object[] args)
     {
+        if (Main.dedServ)
+        {
+            return null!;
+        }
+
         try
         {
             string code = args[0].ToString();
@@ -85,7 +94,10 @@ public class FargoSeeds : Mod
                         break;
                     if (((List<float>)args[9]).Count != 2) // Range must have two elements (min, max)
                         break;
-                    WorldGenUIManager.AddSlider(ModLoader.GetMod((string)args[1]), Language.GetText((string)args[2]), Language.GetText((string)args[3]), Language.GetText((string)args[4]), (Color)args[5], (string)args[6], (float)args[7], (Action<float>)args[8], (bool)args[9], (List<float>)args[10]);
+
+                    var list = (List<float>)args[10];
+
+                    WorldGenUIManager.AddSlider(ModLoader.GetMod((string)args[1]), Language.GetText((string)args[2]), Language.GetText((string)args[3]), Language.GetText((string)args[4]), (Color)args[5], (string)args[6], (float)args[7], (Action<float>)args[8], (bool)args[9], list[0], list[1]);
                 }
                 break;
                 case "SetCategoryPriority":
@@ -107,6 +119,6 @@ public class FargoSeeds : Mod
             Logger.Error("Call Error: " + e.StackTrace + e.Message);
         }
 
-        return base.Call(args);
+        return null!;
     }
 }

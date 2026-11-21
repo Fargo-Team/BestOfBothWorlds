@@ -1,32 +1,29 @@
 ﻿using Microsoft.Xna.Framework;
 using System;
 using System.Collections.Generic;
-using System.ComponentModel;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using Terraria.ID;
 using Terraria.Localization;
 using Terraria.ModLoader;
-using Terraria.ModLoader.Config;
 
 namespace FargoSeeds.UI.WorldGenMenu;
 
 public class WorldGenOptions : ModSystem
 {
-    public static string Path = "Mods.FargoSeeds.WorldGenMenu.";
+    public const string KEY = "Mods.FargoSeeds.WorldGenMenu.";
+
     public override void Load()
     {
         AddOptions();
     }
+
     internal void AddToggle(LocalizedText category, string config, Color textColor, int iconItemID, bool defaultValue, Action<bool> action, bool emode = false)
     {
         string iconTexturePath = "Terraria/Images/Item_" + iconItemID;
         WorldGenUIManager.AddToggle(
             Mod,
             category,
-            Language.GetText(Path + config + ".Label"),
-            Language.GetText(Path + config + ".Tooltip"),
+            Language.GetText(KEY + config + ".Label"),
+            Language.GetText(KEY + config + ".Tooltip"),
             textColor,
             iconTexturePath,
             defaultValue,
@@ -39,8 +36,8 @@ public class WorldGenOptions : ModSystem
         WorldGenUIManager.AddToggle(
             Mod,
             category,
-            Language.GetText(Path + config + ".Label"),
-            Language.GetText(Path + config + ".Tooltip"),
+            Language.GetText(KEY + config + ".Label"),
+            Language.GetText(KEY + config + ".Tooltip"),
             textColor,
             iconTexturePath,
             defaultValue,
@@ -48,19 +45,20 @@ public class WorldGenOptions : ModSystem
             emode
         );
     }
-    internal void AddSlider(LocalizedText category, string config, Color textColor, string iconTexturePath, float defaultValue, Action<float> action, bool intSlider, List<float> sliderRange)
+    internal void AddSlider(LocalizedText category, string config, Color textColor, string iconTexturePath, float defaultValue, Action<float> action, bool intSlider, float min, float max)
     {
         WorldGenUIManager.AddSlider(
             Mod,
             category,
-            Language.GetText(Path + config + ".Label"),
-            Language.GetText(Path + config + ".Tooltip"),
+            Language.GetText(KEY + config + ".Label"),
+            Language.GetText(KEY + config + ".Tooltip"),
             textColor,
             iconTexturePath,
             defaultValue,
             action,
             intSlider,
-            sliderRange
+            min,
+            max
         );
     }
     internal void AddFrequencySlider(string config, Color textColor, int iconItemID, Action<float> action, int defaultValue = 1)
@@ -68,20 +66,21 @@ public class WorldGenOptions : ModSystem
         string iconTexturePath = "Terraria/Images/Item_" + iconItemID;
         WorldGenUIManager.AddSlider(
             Mod,
-            Language.GetText(Path + "HeaderFrequency"),
-            Language.GetText(Path + config + ".Label"),
-            Language.GetText(Path + config + ".Tooltip"),
+            Language.GetText(KEY + "HeaderFrequency"),
+            Language.GetText(KEY + config + ".Label"),
+            Language.GetText(KEY + config + ".Tooltip"),
             textColor,
             iconTexturePath,
             defaultValue,
             action,
             true,
-            [0, 5]
+            0,
+            5
         );
     }
     internal void AddOptions()
     {
-        string headerPath = Path + "Header";
+        string headerPath = KEY + "Header";
         bool souls = ModLoader.HasMod("FargowiltasSouls");
 
         Color color = Color.White;

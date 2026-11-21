@@ -10,7 +10,7 @@ using Terraria.UI;
 
 namespace FargoSeeds.UI;
 
-public class Slider : UIElement
+public class UISlider : UIElement
 {
     public Asset<Texture2D> InnerTexture { get; set; }
 
@@ -20,7 +20,9 @@ public class Slider : UIElement
 
     public float Ratio { get; set; }
 
-    public event Action<Slider>? OnChanged;
+    public int Segments { get; set; } = -1;
+
+    public event Action<UISlider>? OnChanged;
 
     /// <summary>
     /// Used over IsMouseHovering to determine if the mouse is hovering the slider and NOT dragging another.
@@ -29,7 +31,7 @@ public class Slider : UIElement
 
     protected bool IsHeld;
 
-    public Slider()
+    public UISlider()
     {
         Width.Set(0, 1f);
         Height.Set(16, 0f);
@@ -102,6 +104,11 @@ public class Slider : UIElement
         float num = mousePosition.X - dims.X;
 
         Ratio = Math.Clamp(num / dims.Width, 0f, 1f);
+
+        if (Segments != -1)
+        {
+            Ratio = float.Round(Ratio * Segments) / Segments;
+        }
 
         if (oldRatio != Ratio)
         {

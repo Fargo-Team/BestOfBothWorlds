@@ -3,23 +3,15 @@ using Microsoft.Xna.Framework.Graphics;
 using ReLogic.Content;
 using System;
 using System.Collections.Generic;
-using System.ComponentModel;
 using System.Linq;
-using System.Reflection;
-using System.Text;
-using System.Threading.Tasks;
 using Terraria;
-using Terraria.Audio;
-using Terraria.GameContent;
 using Terraria.GameContent.UI.Elements;
 using Terraria.GameContent.UI.States;
 using Terraria.GameInput;
-using Terraria.ID;
-using Terraria.IO;
 using Terraria.Localization;
 using Terraria.ModLoader;
+using Terraria.ModLoader.UI.Elements;
 using Terraria.UI;
-using Terraria.UI.Chat;
 
 namespace FargoSeeds.UI.WorldGenMenu;
 
@@ -31,51 +23,42 @@ internal class WorldGenUIManager : ModSystem
 
     public UIElement InfoMenuParent;
 
-    public static Dictionary<UIWorldGenCategory, List<UIElement>> ToggleCategories = [];
+    public static Dictionary<UIWorldGenCategory, List<WorldGenOption>> OptionsByCategory = [];
 
     public static int ToggleWidth = 222;
     public static int ToggleHeight = 34;
 
-    public static void AddToggle(Mod mod, LocalizedText category, LocalizedText title, LocalizedText description, Color textColor, string iconTexturePath,  bool defaultValue, Action<bool> action, bool emode = false, float priority = 1f)
+    public static void AddToggle(Mod mod, LocalizedText category, LocalizedText title, LocalizedText description, Color textColor, string iconTexturePath, bool defaultValue, Action<bool> action, bool emode = false, float priority = 1f)
     {
-        if (Main.dedServ)
-            return;
-            
-        var uiToggle = new UIWorldGenToggle(mod, title, description, textColor, iconTexturePath, defaultValue, action, emode, priority)
+        var toggleOption = new ToggleOption(mod, title, description, priority, defaultValue, textColor, iconTexturePath);
         {
-            Width = StyleDimension.FromPixels(ToggleWidth),
-            Height = StyleDimension.FromPixels(ToggleHeight),
-        };
-        AddCategory(uiToggle, category);
+            toggleOption.OnRunAction += action;
+        }
+        AddCategory(toggleOption, category);
     }
-    public static void AddSlider(Mod mod, LocalizedText category, LocalizedText title, LocalizedText description, Color textColor, string iconTexturePath,  float defaultValue, Action<float> action, bool intSlider, List<float> sliderRange)
-    {
-        if (Main.dedServ)
-            return;
 
-        var uiToggle = new UIWorldGenSlider(mod, title, description, textColor, iconTexturePath, defaultValue, action, intSlider, sliderRange)
+    public static void AddSlider(Mod mod, LocalizedText category, LocalizedText title, LocalizedText description, Color textColor, string iconTexturePath, float defaultValue, Action<float> action, bool intSlider, float min, float max, float priority = 1f)
+    {
+        var sliderOption = new SliderOption(mod, title, description, priority, defaultValue, intSlider ? (int)(max - min) : -1, min, max, textColor, iconTexturePath);
         {
-            Width = StyleDimension.FromPixels(ToggleWidth),
-            Height = StyleDimension.FromPixels(ToggleHeight),
-        };
-        AddCategory(uiToggle, category);
+            sliderOption.OnRunAction += action;
+        }
+        AddCategory(sliderOption, category);
     }
-    public static void AddCategory(UIElement element, LocalizedText categoryText)
-    {
-        if (Main.dedServ)
-            return;
 
-        UIWorldGenCategory category = ToggleCategories.Keys.FirstOrDefault(c => c.Text.Value == categoryText.Value, null);
+    public static void AddCategory(WorldGenOption element, LocalizedText categoryText)
+    {
+        UIWorldGenCategory category = OptionsByCategory.Keys.FirstOrDefault(c => c.Text.Value == categoryText.Value, null);
         if (category == null)
         {
-            category = new UIWorldGenCategory(categoryText, ToggleCategories.Count)
+            category = new UIWorldGenCategory(categoryText, OptionsByCategory.Count)
             {
                 Width = StyleDimension.FromPixels(ToggleWidth),
                 Height = StyleDimension.FromPixels(ToggleHeight),
             };
-            ToggleCategories[category] = [];
+            OptionsByCategory[category] = [];
         }
-        ToggleCategories[category].Add(element);
+        OptionsByCategory[category].Add(element);
     }
     /// <summary>
     /// Ascending order <br></br>
@@ -84,23 +67,21 @@ internal class WorldGenUIManager : ModSystem
     /// </summary>
     public static void ChangeCategoryPriority(LocalizedText categoryText, float newPriority)
     {
-        UIWorldGenCategory category = ToggleCategories.Keys.FirstOrDefault(c => c.Text.Value == categoryText.Value, null);
+        UIWorldGenCategory category = OptionsByCategory.Keys.FirstOrDefault(c => c.Text.Value == categoryText.Value, null);
         if (category == null)
         {
-            category = new UIWorldGenCategory(categoryText, ToggleCategories.Count)
+            category = new UIWorldGenCategory(categoryText, OptionsByCategory.Count)
             {
                 Width = StyleDimension.FromPixels(ToggleWidth),
                 Height = StyleDimension.FromPixels(ToggleHeight),
             };
-            ToggleCategories[category] = [];
+            OptionsByCategory[category] = [];
         }
         category.Priority = newPriority;
     }
-    public static int TogglesPerRow => 2;
-    public override void Load()
-    {
-        base.Load();
-    }
+
+    private const int toggles_per_row = 2;
+
     public override void PostSetupContent()
     {
         // load stuff
@@ -211,38 +192,28 @@ internal class WorldGenUIManager : ModSystem
         scrollBar.OnScrollWheel += HotbarScrollFix;
         scrollBar.HAlign = 1;
 
-        UIToggleList toggleList = [];
-        toggleList.Width.Set(-20, 1f);
-        toggleList.Height.Set(0, 0.8f);
-        toggleList.SetScrollbar(scrollBar);
-        toggleList.OnScrollWheel += HotbarScrollFix;
-
-        /*
-        UIToggleList toggleList2 = [];
-        toggleList2.Left.Set(ToggleWidth + 8, 0);
-        toggleList2.Width.Set(0, 0.5f);
-        toggleList2.Height.Set(0, 0.8f);
-        toggleList2.SetScrollbar(scrollBar);
-        toggleList2.OnScrollWheel += HotbarScrollFix;
-        */
+        UIGrid grid = [];
+        grid.Width.Set(-20, 1f);
+        grid.Height.Set(0, 0.8f);
+        grid.SetScrollbar(scrollBar);
+        grid.OnScrollWheel += HotbarScrollFix;
 
         uiPanel.Append(scrollBar);
-        uiPanel.Append(toggleList);
+        uiPanel.Append(grid);
         //uiPanel.Append(toggleList2);
 
         var elements = new List<UIElement>();
-        foreach (UIWorldGenCategory category in ToggleCategories.Keys.OrderBy(x => x.Priority))
+        foreach (UIWorldGenCategory category in OptionsByCategory.Keys.OrderBy(x => x.Priority))
         {
-            if (ToggleCategories[category].Count == 0)
+            if (OptionsByCategory[category].Count == 0)
+            {
                 continue;
-            category.Width = StyleDimension.FromPercent(1f);
-            if (elements.Count % 2 == 1)
-                elements.Add(new UIElement() { Height = StyleDimension.FromPixels(ToggleHeight) }); // empty space
-            elements.Add(category);
-            elements.Add(new UIElement() { Height = StyleDimension.FromPixels(ToggleHeight)}); // empty space
+            }
 
-            foreach (var categToggle in ToggleCategories[category].OrderBy(i => i is UIWorldGenToggle t ? t.Priority : 1f))
-                elements.Add(categToggle);
+            category.Width.Set(0f, 1f);
+            elements.Add(category);
+
+            elements.AddRange(OptionsByCategory[category].OrderBy(o => o.Priority));
         }
 
         foreach (UIElement element in elements)
@@ -250,8 +221,11 @@ internal class WorldGenUIManager : ModSystem
             element.OnMouseOver += ShowToggleDescription;
             element.OnMouseOut += ClearToggleDescription;
             element.SetSnapPoint("WorldGenToggle" + toggleCount, 0);
+
+            element.Width.Set(-4, 1f / toggles_per_row);
+
             toggleCount++;
-            toggleList.Add(element);
+            grid.Add(element);
         }
 
         int height = 238; // evil magic number to put the separator in the same spot as the vanilla one
@@ -293,21 +267,17 @@ internal class WorldGenUIManager : ModSystem
     }
     private void ShowToggleDescription(UIMouseEvent evt, UIElement listeningElement)
     {
-        if (listeningElement is UIWorldGenToggle uiToggle)
+        if (listeningElement is WorldGenOption opt)
         {
-            LocalizedText localizedText = uiToggle.Description;
-            DescriptionText.SetText(localizedText);
-        }
-        else if (listeningElement is UIWorldGenSlider uiSlider)
-        {
-            LocalizedText localizedText = uiSlider.Description;
-            DescriptionText.SetText(localizedText);
+            DescriptionText.SetText(opt.Description);
         }
     }
+
     private void ClearToggleDescription(UIMouseEvent evt, UIElement listeningElement)
     {
         DescriptionText.SetText(Language.GetText("UI.WorldDescriptionDefault"));
     }
+
     private void ToggleMenu()
     {
         ModdedMenuActive = !ModdedMenuActive;
@@ -315,22 +285,15 @@ internal class WorldGenUIManager : ModSystem
 
     private void FinishCreatingWorld_Detour(On_UIWorldCreation.orig_FinishCreatingWorld orig, UIWorldCreation self)
     {
-        foreach (var toggles in ToggleCategories.Values)
+        foreach (var opts in OptionsByCategory.Values)
+        foreach (var opt in opts)
         {
-            foreach (var toggle in toggles)
-            {
-                if (toggle is UIWorldGenToggle uiToggle)
-                {
-                    uiToggle.InvokeAction();
-                }
-                else if (toggle is UIWorldGenSlider uiSlider)
-                {
-                    uiSlider.InvokeAction();
-                }
-            }
+            opt.RunAction(opt.Value);
         }
+
         orig(self);
     }
+
     private void Click_GoBack_Detour(On_UIWorldCreation.orig_Click_GoBack orig, UIWorldCreation self, UIMouseEvent evt, UIElement listeningElement)
     {
         if (ModdedMenuActive)
@@ -340,6 +303,7 @@ internal class WorldGenUIManager : ModSystem
         }
         orig(self, evt, listeningElement);
     }
+
     private void Click_NamingAndCreating_Detour(On_UIWorldCreation.orig_Click_NamingAndCreating orig, UIWorldCreation self, UIMouseEvent evt, UIElement listeningElement)
     {
         if (!ModdedMenuActive)
@@ -365,6 +329,7 @@ internal class WorldGenUIManager : ModSystem
 
     private void HotbarScrollFix(UIScrollWheelEvent evt, UIElement listeningElement) => Main.LocalPlayer.ScrollHotbar(PlayerInput.ScrollWheelDelta / 120);
 
+    // TODO: Bad, don't do this.
 #region UIElement Detours
     // This exists to make the Info Menu dissappear when the modded tab is selected
     private void UIElement_Draw_Detour(On_UIElement.orig_Draw orig, UIElement self, SpriteBatch spriteBatch)
