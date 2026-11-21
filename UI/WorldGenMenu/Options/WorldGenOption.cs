@@ -99,7 +99,7 @@ public class WorldGenOption : UIElement
             return 0;
         }
 
-        return Priority.CompareTo(opt);
+        return Priority.CompareTo(opt.Priority);
     }
 
     public virtual void RunAction(object obj)
