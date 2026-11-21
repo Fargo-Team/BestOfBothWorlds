@@ -1,8 +1,9 @@
-﻿using System;
-using Microsoft.Xna.Framework;
+﻿using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using ReLogic.Content;
+using System;
 using Terraria;
+using Terraria.Audio;
 using Terraria.GameContent.UI.Elements;
 using Terraria.ID;
 using Terraria.Localization;
@@ -25,6 +26,8 @@ public class WorldGenOption : UIElement
 
     private readonly Asset<Texture2D>? icon;
 
+    protected UIText Label;
+
     public WorldGenOption(
         Mod mod,
         LocalizedText title,
@@ -46,16 +49,17 @@ public class WorldGenOption : UIElement
             icon = ModContent.Request<Texture2D>(iconTexturePath, (AssetRequestMode)1);
         }
 
-        UIText label = new(title, 0.9f);
+        Label = new(title, 0.9f);
         {
-            label.HAlign = 0f;
-            label.VAlign = 0.5f;
-            label.Width.Set(0f - 10f, 1f);
-            label.Top.Set(0f, 0f);
-            label.Left.Set(0, 0.05f);
-            label.TextColor = textColor;
+            Label.HAlign = 0f;
+            Label.VAlign = 0.5f;
+            Label.Width.Set(0f - 10f, 1f);
+            Label.Top.Set(0f, 0f);
+            Label.Left.Set(0, 0.05f);
+            Label.TextColor = textColor;
+            Label.IgnoresMouseInteraction = true;
         }
-        Append(label);
+        Append(Label);
     }
 
     protected override void DrawSelf(SpriteBatch sb)
@@ -104,6 +108,20 @@ public class WorldGenOption : UIElement
 
     public virtual void RunAction(object obj)
     { }
+
+    private bool priorHover;
+
+    public override void Update(GameTime gameTime)
+    {
+        if (!priorHover && IsMouseHovering)
+        {
+            SoundEngine.PlaySound(SoundID.MenuTick);
+        }
+
+        priorHover = IsMouseHovering;
+
+        base.Update(gameTime);
+    }
 }
 
 public class WorldGenOption<T> : WorldGenOption

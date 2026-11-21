@@ -26,13 +26,6 @@ public sealed class ToggleOption(
         base.LeftMouseDown(evt);
     }
 
-    public override void MouseOver(UIMouseEvent evt)
-    {
-        base.MouseOver(evt);
-
-        SoundEngine.PlaySound(SoundID.MenuTick);
-    }
-
     protected override void DrawSelf(SpriteBatch sb)
     {
         var panelColor = Colors.InventoryDefaultColor * 0.75f;

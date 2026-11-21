@@ -189,14 +189,12 @@ internal class WorldGenUIManager : ModSystem
         scrollBar.Width.Set(20, 0);
         scrollBar.Height.Set(0, 0.8f);
         scrollBar.OverflowHidden = true;
-        scrollBar.OnScrollWheel += HotbarScrollFix;
         scrollBar.HAlign = 1;
 
         UIGrid grid = [];
         grid.Width.Set(-20, 1f);
         grid.Height.Set(0, 0.8f);
         grid.SetScrollbar(scrollBar);
-        grid.OnScrollWheel += HotbarScrollFix;
 
         uiPanel.Append(scrollBar);
         uiPanel.Append(grid);
@@ -222,7 +220,12 @@ internal class WorldGenUIManager : ModSystem
             element.OnMouseOut += ClearToggleDescription;
             element.SetSnapPoint("WorldGenToggle" + toggleCount, 0);
 
-            element.Width.Set(-4, 1f / toggles_per_row);
+            element.Height.Set(ToggleHeight, 0f);
+
+            if (element is WorldGenOption)
+            {
+                element.Width.Set(-4, 1f / toggles_per_row);
+            }
 
             toggleCount++;
             grid.Add(element);
@@ -326,8 +329,6 @@ internal class WorldGenUIManager : ModSystem
             }
         }
     }
-
-    private void HotbarScrollFix(UIScrollWheelEvent evt, UIElement listeningElement) => Main.LocalPlayer.ScrollHotbar(PlayerInput.ScrollWheelDelta / 120);
 
     // TODO: Bad, don't do this.
 #region UIElement Detours
