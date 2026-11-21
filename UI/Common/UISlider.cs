@@ -16,6 +16,8 @@ public class UISlider : UIElement
 
     public Asset<Texture2D> BlipTexture { get; set; }
 
+    public Color BorderColor { get; set; }
+
     public Color InnerColor { get; set; }
 
     public float Ratio { get; set; }
@@ -36,6 +38,7 @@ public class UISlider : UIElement
         Width.Set(0, 1f);
         Height.Set(16, 0f);
 
+        BorderColor = Color.White;
         InnerColor = Color.White;
 
         InnerTexture = Assets.Images.UI.Gradient.Asset;
@@ -130,7 +133,7 @@ public class UISlider : UIElement
         Texture2D slider = Assets.Images.UI.Slider.Asset.Value;
         Texture2D sliderOutline = Assets.Images.UI.SliderHighlight.Asset.Value;
 
-        DrawBar(slider, Color.White);
+        DrawBar(slider, BorderColor);
 
         if (Hovering || IsHeld)
         {

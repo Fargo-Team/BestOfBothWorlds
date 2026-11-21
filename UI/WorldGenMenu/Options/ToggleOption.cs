@@ -41,7 +41,10 @@ public sealed class ToggleOption(
 
         if (Value)
         {
-            DrawPanel(sb, selectedTexture, selectedColor);
+            var dims = this.Dimensions;
+            dims.Inflate(-7, -7);
+
+            DrawPanel(sb, selectedTexture, selectedColor, dims);
         }
 
         if (IsMouseHovering)
@@ -50,5 +53,19 @@ public sealed class ToggleOption(
         }
 
         DrawIcon(sb);
+    }
+
+    private bool priorHover;
+
+    public override void Update(GameTime gameTime)
+    {
+        if (!priorHover && IsMouseHovering)
+        {
+            SoundEngine.PlaySound(SoundID.MenuTick);
+        }
+
+        priorHover = IsMouseHovering;
+
+        base.Update(gameTime);
     }
 }

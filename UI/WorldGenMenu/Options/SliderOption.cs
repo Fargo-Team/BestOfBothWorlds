@@ -20,8 +20,6 @@ public sealed class SliderOption(
 {
     public override void OnInitialize()
     {
-        PaddingRight = 5;
-
         var slider = new UISlider();
         {
             slider.Segments = segments;
@@ -29,7 +27,14 @@ public sealed class SliderOption(
             slider.Width.Set(-40, 1f);
             slider.VAlign = 0.5f;
 
+            slider.Left.Set(-5, 0f);
+
+            slider.BorderColor = Color.Gray;
+            slider.InnerColor = Color.DarkGray;
+
             slider.OnChanged += OnChanged_UpdateValue;
+
+            slider.Ratio = Utils.Remap(Value, min, max, 0f, 1f);
         }
         Append(slider);
 

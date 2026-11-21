@@ -51,11 +51,10 @@ public class WorldGenOption : UIElement
 
         Label = new(title, 0.9f);
         {
-            Label.HAlign = 0f;
+            Label.HAlign = 1f;
             Label.VAlign = 0.5f;
-            Label.Width.Set(0f - 10f, 1f);
+            Label.Width.Set(0f - (icon is null ? 0f : 35f), 1f);
             Label.Top.Set(0f, 0f);
-            Label.Left.Set(0, 0.05f);
             Label.TextColor = textColor;
             Label.IgnoresMouseInteraction = true;
         }
@@ -74,8 +73,11 @@ public class WorldGenOption : UIElement
 
     protected void DrawPanel(SpriteBatch sb, Texture2D texture, Color color)
     {
-        var dims = this.Dimensions;
+        DrawPanel(sb, texture, color, this.Dimensions);
+    }
 
+    protected void DrawPanel(SpriteBatch sb, Texture2D texture, Color color, Rectangle dims)
+    {
         Utils.DrawSplicedPanel(sb, texture, dims.X, dims.Y, dims.Width, dims.Height, 10, 10, 10, 10, color);
     }
 
