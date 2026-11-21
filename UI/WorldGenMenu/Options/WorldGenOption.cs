@@ -110,20 +110,6 @@ public class WorldGenOption : UIElement
 
     public virtual void RunAction(object obj)
     { }
-
-    private bool priorHover;
-
-    public override void Update(GameTime gameTime)
-    {
-        if (!priorHover && IsMouseHovering)
-        {
-            SoundEngine.PlaySound(SoundID.MenuTick);
-        }
-
-        priorHover = IsMouseHovering;
-
-        base.Update(gameTime);
-    }
 }
 
 public class WorldGenOption<T> : WorldGenOption
