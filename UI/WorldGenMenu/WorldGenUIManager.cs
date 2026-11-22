@@ -89,7 +89,9 @@ public sealed class WorldGenUIManager : ILoadable
 
         infoPageContainer = parentContainer;
 
-        vanillaPanelHeight = infoPageContainer.Height.Pixels;
+        creationUi.Recalculate();
+
+        vanillaPanelHeight = infoPageContainer.Dimensions.Height;
 
         infoPage = parentContainer.Children.First();
 
