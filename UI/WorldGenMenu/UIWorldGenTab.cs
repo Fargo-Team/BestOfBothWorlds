@@ -65,7 +65,7 @@ public class UIWorldGenTab : UIElement
             return;
         }
 
-        SoundEngine.PlaySound(SoundID.MenuTick);
+        SoundEngine.PlaySound(SoundID.MenuOpen);
         base.LeftMouseDown(evt);
     }
 

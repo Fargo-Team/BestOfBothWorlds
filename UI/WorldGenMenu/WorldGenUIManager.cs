@@ -1,4 +1,5 @@
 ﻿using System.Linq;
+using Microsoft.Xna.Framework.Graphics;
 using MonoMod.Cil;
 using Terraria.GameContent.UI.Elements;
 using Terraria.GameContent.UI.States;
@@ -13,6 +14,7 @@ public sealed class WorldGenUIManager : ILoadable
     {
         IL_UIWorldCreation.BuildPage += BuildPage_CacheContainer;
         On_UIWorldCreation.MakeInfoMenu += MakeInfoMenu_CacheInfoPage_AddTabs;
+        On_UIWorldCreation.SetupGamepadPoints += SetupGamepadPoints_TEMP_SkipGamepadPoints;
     }
 
     void ILoadable.Unload()
@@ -31,6 +33,16 @@ public sealed class WorldGenUIManager : ILoadable
     private static UIWorldGenTab? vanillaTab;
 
     private static UIWorldGenTab? moddedTab;
+
+    private void SetupGamepadPoints_TEMP_SkipGamepadPoints(On_UIWorldCreation.orig_SetupGamepadPoints orig, UIWorldCreation self, SpriteBatch sb)
+    {
+        if (infoPageContainer?.HasChild(infoPage) is not true)
+        {
+            return;
+        }
+
+        orig(self, sb);
+    }
 
     private static void BuildPage_CacheContainer(ILContext il)
     {
@@ -57,6 +69,8 @@ public sealed class WorldGenUIManager : ILoadable
     private static void MakeInfoMenu_CacheInfoPage_AddTabs(On_UIWorldCreation.orig_MakeInfoMenu orig, UIWorldCreation self, UIElement parentContainer)
     {
         orig(self, parentContainer);
+
+        creationUi = self;
 
         infoPageContainer = parentContainer;
         infoPage = parentContainer.Children.First();
@@ -135,7 +149,7 @@ public sealed class WorldGenUIManager : ILoadable
 
         infoPageContainer.RemoveChild(moddedInfoPage);
 
-        if (!infoPageContainer.Children.Contains(infoPage))
+        if (!infoPageContainer.HasChild(infoPage))
         {
             infoPageContainer.Append(infoPage);
         }
@@ -157,7 +171,7 @@ public sealed class WorldGenUIManager : ILoadable
 
         infoPageContainer.RemoveChild(infoPage);
 
-        if (!infoPageContainer.Children.Contains(moddedInfoPage))
+        if (!infoPageContainer.HasChild(moddedInfoPage))
         {
             BuildModdedInfoPage();
 
