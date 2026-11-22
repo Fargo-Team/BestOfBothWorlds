@@ -1,22 +1,16 @@
-﻿using Microsoft.Xna.Framework;
+﻿using FargoSeeds.Content;
+using Microsoft.Xna.Framework;
 using Terraria;
-using Terraria.Localization;
-using Terraria.ModLoader;
 
 namespace FargoSeeds.UI.WorldGenMenu;
 
-public sealed class SliderOption(
-    Mod mod,
-    LocalizedText title,
-    LocalizedText description,
-    float priority,
-    float defaultValue,
-    int segments,
+public sealed class SliderOptionElement(
+    WorldGenOption option,
     float min,
     float max,
-    Color textColor,
-    string? iconTexturePath)
-    : WorldGenOption<float>(mod, title, description, priority, defaultValue, textColor, iconTexturePath)
+    int segements,
+    Color textColor)
+    : UIOptionElement<float>(option, textColor)
 {
     public override void OnInitialize()
     {
@@ -41,7 +35,7 @@ public sealed class SliderOption(
         RemoveChild(Label);
         Append(Label);
 
-        Label.SetText($"{title}: {Value}");
+        Label.SetText($"{Title}: {Value}");
 
         Recalculate();
     }
@@ -50,6 +44,6 @@ public sealed class SliderOption(
     {
         Value = Utils.Remap(obj.Ratio, 0f, 1f, min, max);
 
-        Label.SetText($"{title}: {Value}");
+        Label.SetText($"{Title}: {Value}");
     }
 }

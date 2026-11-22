@@ -1,22 +1,17 @@
-﻿using Microsoft.Xna.Framework;
+﻿using FargoSeeds.Content;
+using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Terraria.Audio;
 using Terraria.ID;
-using Terraria.Localization;
 using Terraria.ModLoader;
 using Terraria.UI;
 
 namespace FargoSeeds.UI.WorldGenMenu;
 
-public sealed class ToggleOption(
-    Mod mod,
-    LocalizedText title,
-    LocalizedText description,
-    float priority,
-    bool defaultValue,
-    Color textColor,
-    string? iconTexturePath)
-    : WorldGenOption<bool>(mod, title, description, priority, defaultValue, textColor, iconTexturePath)
+public sealed class ToggleOptionElement(
+    WorldGenOption option,
+    Color textColor)
+    : UIOptionElement<bool>(option, textColor)
 {
     public override void LeftMouseDown(UIMouseEvent evt)
     {
