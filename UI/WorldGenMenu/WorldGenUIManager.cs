@@ -2,6 +2,7 @@
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using MonoMod.Cil;
+using System;
 using System.Diagnostics;
 using System.Linq;
 using Terraria;
@@ -125,17 +126,17 @@ public sealed class WorldGenUIManager : ILoadable
 
         static void SideTabs_OnUpdate_UpdatePosition(UIElement element)
         {
-            if (entireContainer is null)
+            if (infoPageContainer is null)
             {
                 return;
             }
 
-            var contDims = entireContainer.Dimensions;
+            var contDims = infoPageContainer.Dimensions;
 
             element.Left.Set(contDims.Right + 10, 0f);
             element.Top.Set(contDims.Y, 0f);
 
-            element.Height.Set(contDims.Height, 0f);
+            element.Height.Set(280f + 18f, 0f);
 
             element.Recalculate();
         }
@@ -155,12 +156,17 @@ public sealed class WorldGenUIManager : ILoadable
 
         moddedTab?.Enabled = false;
 
+        infoPageContainer.Parent.Height.Set(280f + 18f, 0f);
+        entireContainer!.Height.Set(434f + 18f, 0f);
+
         infoPageContainer.RemoveChild(moddedInfoPage);
 
         if (!infoPageContainer.HasChild(infoPage))
         {
             infoPageContainer.Append(infoPage);
         }
+
+        entireContainer?.Recalculate();
     }
 
     private static void OpenModdedUI(UIMouseEvent evt, UIElement element)
@@ -177,6 +183,9 @@ public sealed class WorldGenUIManager : ILoadable
 
         vanillaTab?.Enabled = false;
 
+        infoPageContainer.Parent.Height.Set(408f + 18f, 0f);
+        entireContainer!.Height.Set(434f + 18f + 128f, 0f);
+
         infoPageContainer.RemoveChild(infoPage);
 
         if (!infoPageContainer.HasChild(moddedInfoPage))
@@ -185,6 +194,8 @@ public sealed class WorldGenUIManager : ILoadable
 
             infoPageContainer.Append(moddedInfoPage);
         }
+
+        entireContainer?.Recalculate();
 
         return;
 
