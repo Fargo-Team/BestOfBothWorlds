@@ -1,9 +1,9 @@
-﻿using FargoSeeds.Content;
+﻿using System;
+using FargoSeeds.Content;
+using Microsoft.CodeAnalysis.Options;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using MonoMod.Cil;
-using System;
-using System.Diagnostics;
 using System.Linq;
 using Terraria;
 using Terraria.Audio;
@@ -44,6 +44,8 @@ public sealed class WorldGenUIManager : ILoadable
     private static UIWorldGenTab? moddedTab;
 
     private static UIText? modDescText;
+
+    private static UIList? optionsList;
 
     private void SetupGamepadPoints_TEMP_SkipGamepadPoints(On_UIWorldCreation.orig_SetupGamepadPoints orig, UIWorldCreation self, SpriteBatch sb)
     {
@@ -213,39 +215,59 @@ public sealed class WorldGenUIManager : ILoadable
 
                 moddedInfoPage.SetPadding(10f);
                 moddedInfoPage.PaddingBottom = 0f;
-                moddedInfoPage.PaddingTop = 5f;
+                moddedInfoPage.PaddingTop = 3f;
             }
 
             AddDescriptionPanel(moddedInfoPage, description_height);
 
+            const float above_size = 40f;
+
             var above = new UIElement();
             {
                 above.Width.Set(0f, 1f);
-                above.Height.Set(-(description_height + 8f), 1f);
+                above.Height.Set(above_size, 0);
             }
             moddedInfoPage.Append(above);
+
+            var searchBar = new UISearchBar("...");
+            {
+                searchBar.Width.Set(0f, 0.5f);
+                searchBar.HAlign = 1f;
+                searchBar.VAlign = 0f;
+
+                searchBar.Input.OnTextChanged += OnTextChanged_UpdateSearch;
+            }
+            above.Append(searchBar);
+
+            var centerContainer = new UIElement();
+            {
+                centerContainer.Width.Set(0f, 1f);
+                centerContainer.Height.Set(-(description_height + 8f + above_size), 1f);
+                centerContainer.Top.Set(above_size, 0f);
+            }
+            moddedInfoPage.Append(centerContainer);
 
             var scrollbar = new UIScrollbar().WithView(100f, 1000f);
             {
                 scrollbar.HAlign = 1f;
                 scrollbar.Height.Set(0f, 1f);
             }
-            above.Append(scrollbar);
+            centerContainer.Append(scrollbar);
 
-            var list = new UIList();
+            optionsList = new UIList();
             {
-                list.SetScrollbar(scrollbar);
+                optionsList.SetScrollbar(scrollbar);
 
-                list.Height.Set(0f, 1f);
-                list.Width.Set(-(scrollbar.Width.Pixels + 4f), 1f);
+                optionsList.Height.Set(0f, 1f);
+                optionsList.Width.Set(-(scrollbar.Width.Pixels + 4f), 1f);
 
-                list.ManualSortMethod = _ => { };
+                optionsList.ManualSortMethod = _ => { };
             }
-            above.Append(list);
+            centerContainer.Append(optionsList);
 
-            AddOptions(list);
+            AddOptions(optionsList);
 
-            list.Activate();
+            optionsList.Activate();
 
             moddedInfoPage.Recalculate();
         }
@@ -286,7 +308,14 @@ public sealed class WorldGenUIManager : ILoadable
         }
     }
 
-    private static void AddOptions(UIList list)
+    private static void OnTextChanged_UpdateSearch(UIInputField obj)
+    {
+        optionsList!.Clear();
+        AddOptions(optionsList, obj.Text);
+        optionsList.Activate();
+    }
+
+    private static void AddOptions(UIList list, string query = "")
     {
         var categories = WorldGenManager.OPTIONS_BY_CATEGORY.Keys.ToList().OrderBy(c => c.Priority);
 
@@ -338,6 +367,12 @@ public sealed class WorldGenUIManager : ILoadable
             header.Append(resetButton);
 
             var sorted = WorldGenManager.OPTIONS_BY_CATEGORY[category].OrderBy(o => o.Priority).ToList();
+
+            // TODO: Fuzzy matching
+            if (!string.IsNullOrEmpty(query))
+            {
+                sorted.RemoveAll(o => !Language.GetTextValue(o.Name).Contains(query, StringComparison.CurrentCultureIgnoreCase));
+            }
 
             for (var i = 0; i < sorted.Count; i += 2)
             {
