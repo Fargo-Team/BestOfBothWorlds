@@ -31,7 +31,7 @@ public class UISlider : UIElement
     /// </summary>
     public bool Hovering { get; private set; }
 
-    protected bool IsHeld;
+    public bool IsHeld;
 
     public UISlider()
     {

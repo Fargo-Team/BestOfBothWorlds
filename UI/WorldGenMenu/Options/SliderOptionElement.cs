@@ -12,9 +12,11 @@ public sealed class SliderOptionElement(
     Color textColor)
     : UIOptionElement<float>(option, textColor)
 {
+    private UISlider slider;
+
     public override void OnInitialize()
     {
-        var slider = new UISlider();
+        slider = new UISlider();
         {
             slider.Segments = segments;
             slider.HAlign = 1f;
@@ -45,5 +47,19 @@ public sealed class SliderOptionElement(
         Value = Utils.Remap(obj.Ratio, 0f, 1f, min, max);
 
         Label.SetText($"{Title}: {Value}");
+    }
+
+    private float priorValue;
+
+    public override void Update(GameTime gameTime)
+    {
+        base.Update(gameTime);
+
+        if (!slider.IsHeld && priorValue != Value)
+        {
+            slider.Ratio = Utils.Remap(Value, min, max, 0f, 1f);
+        }
+
+        priorValue = Value;
     }
 }

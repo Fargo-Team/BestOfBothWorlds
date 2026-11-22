@@ -6,8 +6,10 @@ using System;
 using System.Diagnostics;
 using System.Linq;
 using Terraria;
+using Terraria.Audio;
 using Terraria.GameContent.UI.Elements;
 using Terraria.GameContent.UI.States;
+using Terraria.ID;
 using Terraria.Localization;
 using Terraria.ModLoader;
 using Terraria.ModLoader.UI;
@@ -166,7 +168,7 @@ public sealed class WorldGenUIManager : ILoadable
             infoPageContainer.Append(infoPage);
         }
 
-        entireContainer?.Recalculate();
+        entireContainer.Recalculate();
     }
 
     private static void OpenModdedUI(UIMouseEvent evt, UIElement element)
@@ -195,7 +197,7 @@ public sealed class WorldGenUIManager : ILoadable
             infoPageContainer.Append(moddedInfoPage);
         }
 
-        entireContainer?.Recalculate();
+        entireContainer.Recalculate();
 
         return;
 
@@ -236,6 +238,8 @@ public sealed class WorldGenUIManager : ILoadable
 
                 list.Height.Set(0f, 1f);
                 list.Width.Set(-(scrollbar.Width.Pixels + 4f), 1f);
+
+                list.ManualSortMethod = _ => { };
             }
             above.Append(list);
 
@@ -303,6 +307,8 @@ public sealed class WorldGenUIManager : ILoadable
 
                 text.VAlign = 0.5f;
                 text.HAlign = 0.5f;
+
+                text.IgnoresMouseInteraction = true;
             }
             header.Append(text);
 
@@ -313,6 +319,23 @@ public sealed class WorldGenUIManager : ILoadable
                 div.Color = Color.Lerp(Color.White, new Color(63, 65, 151, 255), 0.85f) * 0.9f;
             }
             header.Append(div);
+
+            Assets.Images.UI.Reset.Asset.Wait();
+            var resetButton = new UIImageButton(Assets.Images.UI.Reset.Asset);
+            {
+                resetButton.VAlign = 0.5f;
+
+                resetButton.Left.Set(4f, 0f);
+
+                var inner = category;
+
+                resetButton.OnLeftClick += (_, _) =>
+                {
+                    SoundEngine.PlaySound(in SoundID.MenuOpen);
+                    WorldGenManager.ResetCategory(inner);
+                };
+            }
+            header.Append(resetButton);
 
             var sorted = WorldGenManager.OPTIONS_BY_CATEGORY[category].OrderBy(o => o.Priority).ToList();
 

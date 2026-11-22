@@ -33,7 +33,7 @@ public sealed class FargoWorldGenOptions : ModSystem
         AddBool(nameof(WavyCaves), ItemID.StoneBlock, souls, value => { WavyCaves = value; });            // emode
         AddBool(nameof(RemixUnderworld), ItemID.Hellstone, souls, value => { RemixUnderworld = value; }); // emode
 
-        category = new WorldGenManager.Category(header_path + "VanillaFeatures", 2);
+        category = new WorldGenManager.Category(header_path + "VanillaFeatures", 2f);
         AddBool(nameof(BigHives), ItemID.Hive, souls, value => { BigHives = value; });                    // emode
         AddBool(nameof(PyramidEntrance), 848, souls, value => { PyramidEntrance = value; });              // emode
         AddBool(nameof(OceanCaves), ItemID.Coral, false, value => { OceanCaves = value; });
