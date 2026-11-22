@@ -47,14 +47,15 @@ public class UIWorldGenTab : UIElement
         {
             Utils.DrawSplicedPanel(sb, hoverTexture.Value, dims.X, dims.Y, dims.Width, dims.Height, 10, 10, 10, 10, Color.White);
 
-            Vector2 textPosition = new(dims.X + dims.Width + 4, dims.Y + 10);
+            Vector2 textPosition = new(dims.X + dims.Width + 4, dims.Y + 13);
             string text = title.Value;
 
             Utils.DrawBorderString(
                 sb,
                 text,
                 textPosition,
-                Color.White);
+                Color.White
+            );
         }
     }
 

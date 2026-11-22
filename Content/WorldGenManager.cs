@@ -12,12 +12,12 @@ public sealed class WorldGenManager : ILoadable
 {
     public record Category(string Name, float Priority);
 
-    private static readonly Dictionary<Category, List<WorldGenOption>> options_by_category = [];
+    public static readonly Dictionary<Category, List<WorldGenOption>> OPTIONS_BY_CATEGORY = [];
 
     public static void AddOption(WorldGenOption option, Category category)
     {
-        options_by_category.TryAdd(category, []);
-        options_by_category[category].Add(option);
+        OPTIONS_BY_CATEGORY.TryAdd(category, []);
+        OPTIONS_BY_CATEGORY[category].Add(option);
     }
 
     public static void AddToggleOption(Mod mod, string name, string description, Category category, Action<bool> evt, string iconPath = "", float priority = 1f, bool defaultValue = false)
@@ -46,12 +46,12 @@ public sealed class WorldGenManager : ILoadable
 
     public static void AddSliderOption(Mod mod, string name, string description, Category category, Action<float> evt, string iconPath = "", float priority = 1f, float defaultValue = 0f, float min = 0f, float max = 1f, bool intSlider = false)
     {
-        AddSliderOption(mod, name, description, category, evt, iconPath, priority, defaultValue, min, max, intSlider ? -1 : (int)(max - min));
+        AddSliderOption(mod, name, description, category, evt, iconPath, priority, defaultValue, min, max, intSlider ? (int)(max - min) : -1);
     }
 
     public static void Reset()
     {
-        foreach (var key in options_by_category.Keys)
+        foreach (var key in OPTIONS_BY_CATEGORY.Keys)
         {
             ResetCategory(key);
         }
@@ -59,7 +59,7 @@ public sealed class WorldGenManager : ILoadable
 
     public static void ResetCategory(Category category)
     {
-        foreach (var option in options_by_category[category])
+        foreach (var option in OPTIONS_BY_CATEGORY[category])
         {
             option.Value = option.DefaultValue;
         }
@@ -67,8 +67,8 @@ public sealed class WorldGenManager : ILoadable
 
     private static void Apply()
     {
-        foreach (var key in options_by_category.Keys)
-        foreach (var option in options_by_category[key])
+        foreach (var key in OPTIONS_BY_CATEGORY.Keys)
+        foreach (var option in OPTIONS_BY_CATEGORY[key])
         {
             option.Apply();
         }

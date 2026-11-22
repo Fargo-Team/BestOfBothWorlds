@@ -1,9 +1,15 @@
-﻿using System.Linq;
+﻿using FargoSeeds.Content;
+using Microsoft.CodeAnalysis.Options;
+using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using MonoMod.Cil;
+using System.Linq;
 using Terraria.GameContent.UI.Elements;
 using Terraria.GameContent.UI.States;
+using Terraria.Localization;
 using Terraria.ModLoader;
+using Terraria.ModLoader.UI;
+using Terraria.ModLoader.UI.Elements;
 using Terraria.UI;
 
 namespace FargoSeeds.UI.WorldGenMenu;
@@ -194,6 +200,100 @@ public sealed class WorldGenUIManager : ILoadable
             }
 
             creationUi?.AddDescriptionPanel(moddedInfoPage, 0f, string.Empty);
+
+            var above = new UIElement();
+            {
+                above.Width.Set(0f, 1f);
+                above.Height.Set(-48, 1f);
+            }
+            moddedInfoPage.Append(above);
+
+            var scrollbar = new UIScrollbar().WithView(100f, 1000f);
+            {
+                scrollbar.HAlign = 1f;
+                scrollbar.Height.Set(0f, 1f);
+            }
+            above.Append(scrollbar);
+
+            var list = new UIList();
+            {
+                list.SetScrollbar(scrollbar);
+
+                list.Height.Set(0f, 1f);
+                list.Width.Set(-(scrollbar.Width.Pixels + 4f), 1f);
+            }
+            above.Append(list);
+
+            AddOptions(list);
+
+            list.Activate();
+
+            moddedInfoPage.Recalculate();
+        }
+    }
+
+    private static void AddOptions(UIList list)
+    {
+        var categories = WorldGenManager.OPTIONS_BY_CATEGORY.Keys.ToList().OrderBy(c => c.Priority);
+
+        // TODO: Search logic
+        foreach (var category in categories)
+        {
+            var header = new UIElement();
+            {
+                header.Width.Set(0f, 1f);
+                header.Height.Set(30f, 0f);
+            }
+            list.Add(header);
+
+            var text = new UIText(Language.GetText(category.Name));
+            {
+                text.Width.Set(0f, 1f);
+                text.Height.Set(0f, 1f);
+
+                text.VAlign = 0.5f;
+                text.HAlign = 0.5f;
+            }
+            header.Append(text);
+
+            var div = new UIHorizontalSeparator();
+            {
+                div.Width.Set(0f, 1f);
+                div.VAlign = 1f;
+                div.Color = Color.Lerp(Color.White, new Color(63, 65, 151, 255), 0.85f) * 0.9f;
+            }
+            header.Append(div);
+
+            var sorted = WorldGenManager.OPTIONS_BY_CATEGORY[category].OrderBy(o => o.Priority).ToList();
+
+            for (var i = 0; i < sorted.Count; i += 2)
+            {
+                var container = new UIElement();
+                {
+                    container.Height.Set(34f, 0f);
+                    container.Width.Set(0f, 1f);
+                }
+                list.Add(container);
+
+                var left = sorted[i].ProvideElement();
+                {
+                    left.Height.Set(34f, 0f);
+                    left.Width.Set(-3f, 0.5f);
+                }
+                container.Append(left);
+
+                if (i + 1 < sorted.Count)
+                {
+                    var right = sorted[i + 1].ProvideElement();
+                    {
+                        right.Height.Set(34f, 0f);
+                        right.Width.Set(-3f, 0.5f);
+
+                        right.HAlign = 1f;
+                    }
+                    container.Append(right);
+                }
+            }
         }
     }
 }
