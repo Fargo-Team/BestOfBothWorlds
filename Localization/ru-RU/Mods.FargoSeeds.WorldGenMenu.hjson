@@ -1,11 +1,15 @@
 StandardSetting: Стандартные настройки мира
 ModSetting: Модовые настройки мира
 EmodeTag: Рекомендуем для режима Вечность!
-HeaderNewFeatures: Новые особенности
-HeaderOverhauls: Переработки
-HeaderVanillaFeatures: Ванильные особенности
-HeaderFrequency: Частота
-HeaderExperimental: Экспериментальные
+
+Header: {
+	// NewFeatures: New Features
+	// Overhauls: Overhauls
+	// VanillaFeatures: Vanilla Features
+	// Frequency: Frequency
+	// Experimental: Experimental
+}
+
 Next: След.
 
 FishingShacks: {

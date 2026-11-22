@@ -1,368 +1,185 @@
-﻿using Microsoft.Xna.Framework;
-using Microsoft.Xna.Framework.Graphics;
-using ReLogic.Content;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using Terraria;
+﻿using System.Linq;
+using MonoMod.Cil;
 using Terraria.GameContent.UI.Elements;
 using Terraria.GameContent.UI.States;
-using Terraria.GameInput;
-using Terraria.Localization;
 using Terraria.ModLoader;
-using Terraria.ModLoader.UI.Elements;
 using Terraria.UI;
 
 namespace FargoSeeds.UI.WorldGenMenu;
 
-internal class WorldGenUIManager : ModSystem
+public sealed class WorldGenUIManager : ILoadable
 {
-    public static bool ModdedMenuActive = false;
-    public static bool HasClickedMenu = false;
-    public static UIText DescriptionText = null;
-
-    public UIElement InfoMenuParent;
-
-    public static Dictionary<UIWorldGenCategory, List<WorldGenOption>> OptionsByCategory = [];
-
-    public static int ToggleWidth = 222;
-    public static int ToggleHeight = 34;
-
-    public static void AddToggle(Mod mod, LocalizedText category, LocalizedText title, LocalizedText description, Color textColor, string iconTexturePath, bool defaultValue, Action<bool> action, bool emode = false, float priority = 1f)
+    void ILoadable.Load(Mod _)
     {
-        var toggleOption = new ToggleOption(mod, title, description, priority, defaultValue, textColor, iconTexturePath);
-        {
-            toggleOption.OnRunAction += action;
-        }
-        AddCategory(toggleOption, category);
+        IL_UIWorldCreation.BuildPage += BuildPage_CacheContainer;
+        On_UIWorldCreation.MakeInfoMenu += MakeInfoMenu_CacheInfoPage_AddTabs;
     }
 
-    public static void AddSlider(Mod mod, LocalizedText category, LocalizedText title, LocalizedText description, Color textColor, string iconTexturePath, float defaultValue, Action<float> action, bool intSlider, float min, float max, float priority = 1f)
-    {
-        var sliderOption = new SliderOption(mod, title, description, priority, defaultValue, intSlider ? (int)(max - min) : -1, min, max, textColor, iconTexturePath);
-        {
-            sliderOption.OnRunAction += action;
-        }
-        AddCategory(sliderOption, category);
-    }
+    void ILoadable.Unload()
+    { }
 
-    public static void AddCategory(WorldGenOption element, LocalizedText categoryText)
+    private static UIWorldCreation? creationUi;
+
+    private static UIElement? container;
+
+    private static UIElement? infoPageContainer;
+
+    private static UIElement? infoPage;
+
+    private static UIElement? moddedInfoPage;
+
+    private static UIWorldGenTab? vanillaTab;
+
+    private static UIWorldGenTab? moddedTab;
+
+    private static void BuildPage_CacheContainer(ILContext il)
     {
-        UIWorldGenCategory category = OptionsByCategory.Keys.FirstOrDefault(c => c.Text.Value == categoryText.Value, null);
-        if (category == null)
-        {
-            category = new UIWorldGenCategory(categoryText, OptionsByCategory.Count)
+        var c = new ILCursor(il);
+
+        var uiElementIndex = -1;
+
+        c.GotoNext(
+            MoveType.After,
+            i => i.MatchLdloc(out uiElementIndex),
+            i => i.MatchCall<UIElement>(nameof(UIElement.Append))
+        );
+
+        c.EmitLdloc(uiElementIndex);
+
+        c.EmitDelegate(
+            static (UIElement element) =>
             {
-                Width = StyleDimension.FromPixels(ToggleWidth),
-                Height = StyleDimension.FromPixels(ToggleHeight),
-            };
-            OptionsByCategory[category] = [];
-        }
-        OptionsByCategory[category].Add(element);
-    }
-    /// <summary>
-    /// Ascending order <br></br>
-    /// By default, the priority of category number n (vertically) is n <br></br>
-    /// Creates the category if it does not already exist
-    /// </summary>
-    public static void ChangeCategoryPriority(LocalizedText categoryText, float newPriority)
-    {
-        UIWorldGenCategory category = OptionsByCategory.Keys.FirstOrDefault(c => c.Text.Value == categoryText.Value, null);
-        if (category == null)
-        {
-            category = new UIWorldGenCategory(categoryText, OptionsByCategory.Count)
-            {
-                Width = StyleDimension.FromPixels(ToggleWidth),
-                Height = StyleDimension.FromPixels(ToggleHeight),
-            };
-            OptionsByCategory[category] = [];
-        }
-        category.Priority = newPriority;
+                container = element;
+            }
+        );
     }
 
-    private const int toggles_per_row = 2;
-
-    public override void PostSetupContent()
-    {
-        // load stuff
-        On_UIWorldCreation.MakeInfoMenu += MakeInfoMenu_Detour;
-        On_UIWorldCreation.FinishCreatingWorld += FinishCreatingWorld_Detour;
-        On_UIWorldCreation.Click_NamingAndCreating += Click_NamingAndCreating_Detour;
-        On_UIWorldCreation.MakeBackAndCreatebuttons += MakeBackAndCreatebuttons_Detour;
-        On_UIWorldCreation.Click_GoBack += Click_GoBack_Detour;
-
-        On_UIElement.Draw += UIElement_Draw_Detour;
-        On_UIElement.Update += UIElement_Update_Detour;
-        On_UIElement.ContainsPoint += UIElement_ContainsPoint_Detour;
-    }
-
-    UIPanel TogglePanel;
-
-    UITextPanel<LocalizedText> CreateButton;
-
-    private void MakeInfoMenu_Detour(On_UIWorldCreation.orig_MakeInfoMenu orig, UIWorldCreation self, UIElement parentContainer)
+    private static void MakeInfoMenu_CacheInfoPage_AddTabs(On_UIWorldCreation.orig_MakeInfoMenu orig, UIWorldCreation self, UIElement parentContainer)
     {
         orig(self, parentContainer);
 
-        HasClickedMenu = false; // This method runs every time the New World button is clicked; so we can put this here
-        ModdedMenuActive = false;
+        infoPageContainer = parentContainer;
+        infoPage = parentContainer.Children.First();
 
-        InfoMenuParent = parentContainer;
-        int infoMenuHalfWidth = 278;
-        int infoMenuHalfHeight = 225;
-
-        // tab buttons
-        // TODO: these aren't aligned correctly vertically if resolution is not 1920x1080
-        var vanillaTab = new UIWorldGenTab(Language.GetText("Mods.FargoSeeds.WorldGenMenu.StandardSetting"), "FargoSeeds/UI/WorldGenMenu/UIWorldGenTab_Vanilla", () => !ModdedMenuActive, ToggleMenu)
+        var sideTabs = new UIElement();
         {
-            HAlign = 0.5f,
-            VAlign = 0.5f,
-            Left = StyleDimension.FromPixels(infoMenuHalfWidth),
-            Top = StyleDimension.FromPixels(-infoMenuHalfHeight + 0f)
-        };
-        var moddedTab = new UIWorldGenTab(Language.GetText("Mods.FargoSeeds.WorldGenMenu.ModSetting"), "FargoSeeds/UI/WorldGenMenu/UIWorldGenTab_Modded", () => ModdedMenuActive, ToggleMenu)
+            sideTabs.SetPadding(0f);
+
+            sideTabs.Width.Set(44f, 0f);
+
+            // TODO: Maybe recalculate is better? idk im tired boss
+            sideTabs.OnUpdate += SideTabs_OnUpdate_UpdatePosition;
+        }
+        self.Append(sideTabs);
+
+        // TODO: (if multiple tabs are needed, use a VAlign = 0.5 UIList)
+
+        vanillaTab = new UIWorldGenTab(
+            Mods.FargoSeeds.WorldGenMenu.StandardSetting.GetText(),
+            Assets.Images.UI.UIWorldGenTab_Vanilla.Asset
+        );
         {
-            HAlign = 0.5f,
-            VAlign = 0.5f,
-            Left = StyleDimension.FromPixels(infoMenuHalfWidth),
-            Top = StyleDimension.FromPixels(-infoMenuHalfHeight + 44f + 8f)
-        };
-        self.Append(vanillaTab);
-        self.Append(moddedTab);
+            vanillaTab.Enabled = true;
+            vanillaTab.VAlign = 0.5f;
+            vanillaTab.Top.Set(-(22f + 4f), 0f);
 
-        // toggle panel
-        /*
+            vanillaTab.OnLeftClick += OpenVanillaUI;
+        }
+        sideTabs.Append(vanillaTab);
 
-        float panelWidth = 198f * ToggleXAmt;
-        TogglePanel = new()
+        moddedTab = new UIWorldGenTab(
+            Mods.FargoSeeds.WorldGenMenu.ModSetting.GetText(),
+            Assets.Images.UI.UIWorldGenTab_Modded.Asset
+        );
         {
-            Width = StyleDimension.FromPixels(panelWidth),
-            Height = StyleDimension.FromPixels(260),
-            HAlign = 0.5f,
-            VAlign = 1,
-            Top = StyleDimension.FromPixels(-32f),
-            BackgroundColor = new Color(33, 43, 79) * 0.8f
-        };
-        */
-        int num = 18;
-        TogglePanel = new()
+            moddedTab.VAlign = 0.5f;
+            moddedTab.Top.Set((22f + 4f), 0f);
+
+            moddedTab.OnLeftClick += OpenModdedUI;
+        }
+        sideTabs.Append(moddedTab);
+
+        return;
+
+        static void SideTabs_OnUpdate_UpdatePosition(UIElement element)
         {
-            Width = StyleDimension.FromPercent(1f),
-            Height = StyleDimension.FromPixels(280 + num),
-            Top = StyleDimension.FromPixels(50f),
-            BackgroundColor = new Color(33, 43, 79) * 0.8f
-        };
-        TogglePanel.SetPadding(0f);
-        parentContainer.Parent.Parent.Append(TogglePanel);
-        UIElement toggleElement2 = new()
-        {
-            Top = StyleDimension.FromPixelsAndPercent(0f, 0f),
-            Width = StyleDimension.FromPixelsAndPercent(0f, 1f),
-            Height = StyleDimension.FromPixelsAndPercent(0f, 1f),
-            HAlign = 1f
-        };
-        toggleElement2.SetPadding(0f);
-        toggleElement2.PaddingTop = 8f;
-        toggleElement2.PaddingBottom = 12f;
-        TogglePanel.Append(toggleElement2);
-        UIElement toggleElement3 = new UIElement
-        {
-            Width = StyleDimension.FromPixelsAndPercent(0f, 1f),
-            Height = StyleDimension.FromPixelsAndPercent(0f, 1f),
-            HAlign = 0.5f,
-            VAlign = 0f
-        };
-        toggleElement3.SetPadding(10f);
-        toggleElement3.PaddingBottom = 0f;
-        toggleElement3.PaddingTop = 0f;
-        toggleElement2.Append(toggleElement3);
-        AddOptions(toggleElement3);
-    }
-    public void AddOptions(UIElement uiPanel)
-    {
-        int toggleSeparation = 8;
-
-        int toggleCount = 0;
-
-        var scrollBar = new UIScrollbar();
-        scrollBar.SetView(200f, 1000f);
-        scrollBar.Width.Set(20, 0);
-        scrollBar.Height.Set(0, 0.8f);
-        scrollBar.OverflowHidden = true;
-        scrollBar.HAlign = 1;
-
-        UIGrid grid = [];
-        grid.Width.Set(-20, 1f);
-        grid.Height.Set(0, 0.8f);
-        grid.SetScrollbar(scrollBar);
-
-        uiPanel.Append(scrollBar);
-        uiPanel.Append(grid);
-        //uiPanel.Append(toggleList2);
-
-        var elements = new List<UIElement>();
-        foreach (UIWorldGenCategory category in OptionsByCategory.Keys.OrderBy(x => x.Priority))
-        {
-            if (OptionsByCategory[category].Count == 0)
+            if (container is null)
             {
-                continue;
+                return;
             }
 
-            category.Width.Set(0f, 1f);
-            elements.Add(category);
+            var contDims = container.Dimensions;
 
-            elements.AddRange(OptionsByCategory[category].OrderBy(o => o.Priority));
+            element.Left.Set(contDims.Right + 10, 0f);
+            element.Top.Set(contDims.Y, 0f);
+
+            element.Height.Set(contDims.Height, 0f);
+
+            element.Recalculate();
+        }
+    }
+
+    private static void OpenVanillaUI(UIMouseEvent evt, UIElement element)
+    {
+        if (infoPage is null
+         || infoPageContainer is null
+         || element is not UIWorldGenTab tab
+         || tab.Enabled)
+        {
+            return;
         }
 
-        foreach (UIElement element in elements)
+        tab.Enabled = true;
+
+        moddedTab?.Enabled = false;
+
+        infoPageContainer.RemoveChild(moddedInfoPage);
+
+        if (!infoPageContainer.Children.Contains(infoPage))
         {
-            element.OnMouseOver += ShowToggleDescription;
-            element.OnMouseOut += ClearToggleDescription;
-            element.SetSnapPoint("WorldGenToggle" + toggleCount, 0);
+            infoPageContainer.Append(infoPage);
+        }
+    }
 
-            element.Height.Set(ToggleHeight, 0f);
+    private static void OpenModdedUI(UIMouseEvent evt, UIElement element)
+    {
+        if (infoPage is null
+         || infoPageContainer is null
+         || element is not UIWorldGenTab tab
+         || tab.Enabled)
+        {
+            return;
+        }
 
-            if (element is WorldGenOption)
+        tab.Enabled = true;
+
+        vanillaTab?.Enabled = false;
+
+        infoPageContainer.RemoveChild(infoPage);
+
+        if (!infoPageContainer.Children.Contains(moddedInfoPage))
+        {
+            BuildModdedInfoPage();
+
+            infoPageContainer.Append(moddedInfoPage);
+        }
+
+        return;
+
+        void BuildModdedInfoPage()
+        {
+            moddedInfoPage = new UIElement();
             {
-                element.Width.Set(-4, 1f / toggles_per_row);
+                moddedInfoPage.Width.Set(0f, 1f);
+                moddedInfoPage.Height.Set(0f, 1f);
+                moddedInfoPage.HAlign = 0.5f;
+
+                moddedInfoPage.SetPadding(10f);
+                moddedInfoPage.PaddingBottom = 0f;
+                moddedInfoPage.PaddingTop = 0f;
             }
 
-            toggleCount++;
-            grid.Add(element);
-        }
-
-        int height = 238; // evil magic number to put the separator in the same spot as the vanilla one
-
-        UIHorizontalSeparator separator = new()
-        {
-            Width = StyleDimension.FromPercent(1f),
-            Top = StyleDimension.FromPixels(height - 8f),
-            Color = Color.Lerp(Color.White, new Color(63, 65, 151, 255), 0.85f) * 0.9f
-        };
-        uiPanel.Append(separator);
-
-        float num = 0f;
-        UISlicedImage uISlicedImage = new UISlicedImage(Main.Assets.Request<Texture2D>("Images/UI/CharCreation/CategoryPanelHighlight", (AssetRequestMode)1))
-        {
-            HAlign = 0.5f,
-            VAlign = 1f,
-            Width = StyleDimension.FromPixelsAndPercent((0f - num) * 2f, 1f),
-            Left = StyleDimension.FromPixels(0f - num),
-            Height = StyleDimension.FromPixelsAndPercent(40f, 0f),
-            Top = StyleDimension.FromPixels(2f)
-        };
-        uISlicedImage.SetSliceDepths(10);
-        uISlicedImage.Color = Color.LightGray * 0.7f;
-        uiPanel.Append(uISlicedImage);
-        UIText uIText = new(Language.GetText("UI.WorldDescriptionDefault"), 0.6f)
-        {
-            HAlign = 0f,
-            VAlign = 0f,
-            Width = StyleDimension.FromPixelsAndPercent(0f, 1f),
-            Height = StyleDimension.FromPixelsAndPercent(0f, 1f),
-            Top = StyleDimension.FromPixelsAndPercent(1f, 0f),
-            PaddingLeft = 20f,
-            PaddingRight = 20f,
-            PaddingTop = 6f
-        };
-        uISlicedImage.Append(uIText);
-        DescriptionText = uIText;
-    }
-    private void ShowToggleDescription(UIMouseEvent evt, UIElement listeningElement)
-    {
-        if (listeningElement is WorldGenOption opt)
-        {
-            DescriptionText.SetText(opt.Description);
+            creationUi?.AddDescriptionPanel(moddedInfoPage, 0f, string.Empty);
         }
     }
-
-    private void ClearToggleDescription(UIMouseEvent evt, UIElement listeningElement)
-    {
-        DescriptionText.SetText(Language.GetText("UI.WorldDescriptionDefault"));
-    }
-
-    private void ToggleMenu()
-    {
-        ModdedMenuActive = !ModdedMenuActive;
-    }
-
-    private void FinishCreatingWorld_Detour(On_UIWorldCreation.orig_FinishCreatingWorld orig, UIWorldCreation self)
-    {
-        foreach (var opts in OptionsByCategory.Values)
-        foreach (var opt in opts)
-        {
-            opt.RunAction(opt.Value);
-        }
-
-        orig(self);
-    }
-
-    private void Click_GoBack_Detour(On_UIWorldCreation.orig_Click_GoBack orig, UIWorldCreation self, UIMouseEvent evt, UIElement listeningElement)
-    {
-        if (ModdedMenuActive)
-        {
-            ModdedMenuActive = false;
-            return;
-        }
-        orig(self, evt, listeningElement);
-    }
-
-    private void Click_NamingAndCreating_Detour(On_UIWorldCreation.orig_Click_NamingAndCreating orig, UIWorldCreation self, UIMouseEvent evt, UIElement listeningElement)
-    {
-        if (!ModdedMenuActive)
-        {
-            HasClickedMenu = true;
-            ModdedMenuActive = true;
-            return;
-        }
-        orig(self, evt, listeningElement);
-    }
-
-    private void MakeBackAndCreatebuttons_Detour(On_UIWorldCreation.orig_MakeBackAndCreatebuttons orig, UIWorldCreation self, UIElement outerContainer)
-    {
-        orig(self, outerContainer);
-        foreach (var element in outerContainer.Children)
-        {
-            if (element is UITextPanel<LocalizedText> panel && panel.Text.Equals(Language.GetTextValue("UI.Create")))
-            {
-                CreateButton = panel;
-            }
-        }
-    }
-
-    // TODO: Bad, don't do this.
-#region UIElement Detours
-    // This exists to make the Info Menu dissappear when the modded tab is selected
-    private void UIElement_Draw_Detour(On_UIElement.orig_Draw orig, UIElement self, SpriteBatch spriteBatch)
-    {
-        if (InfoMenuParent != null && ModdedMenuActive && self == InfoMenuParent?.Parent)
-            return;
-        if (!ModdedMenuActive && self == TogglePanel)
-            return;
-        if (self == CreateButton)
-        {
-            if (ModdedMenuActive)
-                CreateButton.SetText(Language.GetText("UI.Create"));
-            else
-                CreateButton.SetText(Language.GetText("Mods.FargoSeeds.WorldGenMenu.Next"));
-        }
-        orig(self, spriteBatch);
-    }
-    private void UIElement_Update_Detour(On_UIElement.orig_Update orig, UIElement self, GameTime gameTime)
-    {
-        if (InfoMenuParent != null && ModdedMenuActive && self == InfoMenuParent?.Parent)
-            return;
-        if (!ModdedMenuActive && self == TogglePanel)
-            return;
-        orig(self, gameTime);
-    }
-    private bool UIElement_ContainsPoint_Detour(On_UIElement.orig_ContainsPoint orig, UIElement self, Vector2 point)
-    {
-        if (InfoMenuParent != null && ModdedMenuActive && self == InfoMenuParent?.Parent)
-            return false;
-        if (!ModdedMenuActive && self == TogglePanel)
-            return false;
-        return orig(self, point);
-    }
-#endregion
 }

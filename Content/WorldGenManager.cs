@@ -1,5 +1,7 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
+using Microsoft.Xna.Framework.Graphics;
 using Terraria;
 using Terraria.ModLoader;
 using Terraria.WorldBuilding;
@@ -14,23 +16,37 @@ public sealed class WorldGenManager : ILoadable
 
     public static void AddOption(WorldGenOption option, Category category)
     {
-        options_by_category[category] ??= [];
-        options_by_category[category].Add(option);;
+        options_by_category.TryAdd(category, []);
+        options_by_category[category].Add(option);
     }
 
-    public static void AddToggleOption(Mod mod, string name, string description, Category category, float priority = 1f, bool defaultValue = false)
+    public static void AddToggleOption(Mod mod, string name, string description, Category category, Action<bool> evt, string iconPath = "", float priority = 1f, bool defaultValue = false)
     {
-        AddOption(new WorldGenOption<bool>(mod, name, description, priority, defaultValue), category);
+        AddOption(
+            new WorldGenOption<bool>(mod, name, description, priority, defaultValue)
+            {
+                OnApply = evt,
+                Icon = string.IsNullOrEmpty(iconPath) ? null : ModContent.Request<Texture2D>(iconPath)
+            },
+            category
+        );
     }
 
-    public static void AddSliderOption(Mod mod, string name, string description, Category category, float priority = 1f, float defaultValue = 0f, float min = 0f, float max = 1f, int segments = -1)
+    public static void AddSliderOption(Mod mod, string name, string description, Category category, Action<float> evt, string iconPath = "", float priority = 1f, float defaultValue = 0f, float min = 0f, float max = 1f, int segments = -1)
     {
-        AddOption(new RangeOption(mod, name, description, priority, defaultValue, min, max, segments), category);
+        AddOption(
+            new RangeOption(mod, name, description, priority, defaultValue, min, max, segments)
+            {
+                OnApply = evt,
+                Icon = string.IsNullOrEmpty(iconPath) ? null : ModContent.Request<Texture2D>(iconPath)
+            },
+            category
+        );
     }
 
-    public static void AddSliderOption(Mod mod, string name, string description, Category category, float priority = 1f, float defaultValue = 0f, float min = 0f, float max = 1f, bool intSlider = false)
+    public static void AddSliderOption(Mod mod, string name, string description, Category category, Action<float> evt, string iconPath = "", float priority = 1f, float defaultValue = 0f, float min = 0f, float max = 1f, bool intSlider = false)
     {
-        AddSliderOption(mod, name, description, category, priority, defaultValue, min, max, intSlider ? -1 : (int)(max - min));
+        AddSliderOption(mod, name, description, category, evt, iconPath, priority, defaultValue, min, max, intSlider ? -1 : (int)(max - min));
     }
 
     public static void Reset()

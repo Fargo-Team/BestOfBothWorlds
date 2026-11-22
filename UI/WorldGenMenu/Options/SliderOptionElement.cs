@@ -8,7 +8,7 @@ public sealed class SliderOptionElement(
     WorldGenOption option,
     float min,
     float max,
-    int segements,
+    int segments,
     Color textColor)
     : UIOptionElement<float>(option, textColor)
 {

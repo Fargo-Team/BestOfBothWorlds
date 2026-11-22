@@ -1,10 +1,9 @@
-using FargoSeeds.UI.WorldGenMenu;
 using MonoMod.Cil;
 using Terraria;
 using Terraria.ModLoader;
 using Terraria.ModLoader.IO;
 
-namespace FargoSeeds;
+namespace FargoSeeds.Content;
 
 public class HardmodeOres : ModSystem
 {
@@ -19,7 +18,7 @@ public class HardmodeOres : ModSystem
 
     // creation-menu choice must survive reloads and hosting on dedicated server
     // clients do not generate altar ores, so this flag needs no custom network packet
-    public override void PreWorldGen() => bothOres = WorldGenOptions.BothOres;
+    public override void PreWorldGen() => bothOres = FargoWorldGenOptions.BothOres;
 
     public override void SaveWorldData(TagCompound tag)
     {

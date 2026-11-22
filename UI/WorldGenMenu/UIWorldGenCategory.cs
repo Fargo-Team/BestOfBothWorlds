@@ -30,8 +30,8 @@ public class UIWorldGenCategory : UIElement
     }
     public UIWorldGenCategory(LocalizedText title, float priority)
     {
-        this.Width.Set(WorldGenUIManager.ToggleWidth, 0);
-        this.Height.Set(WorldGenUIManager.ToggleHeight, 0);
+        this.Width.Set(1f, 0);
+        this.Height.Set(1f, 0);
         if (title != null)
         {
             _titleText = title;

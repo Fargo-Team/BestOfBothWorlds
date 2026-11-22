@@ -15,7 +15,7 @@ using Terraria.ModLoader;
 using Terraria.WorldBuilding;
 using static Terraria.GameContent.Animations.Actions.Sprites;
 
-namespace FargoSeeds.WorldGeneration;
+namespace FargoSeeds.Content;
 
 public static class NewFeatures
 {

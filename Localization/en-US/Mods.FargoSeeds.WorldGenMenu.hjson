@@ -1,11 +1,15 @@
 StandardSetting: Standard World Settings
 ModSetting: Modded World Settings
 EmodeTag: Recommended for Eternity Mode!
-HeaderNewFeatures: New Features
-HeaderOverhauls: Overhauls
-HeaderVanillaFeatures: Vanilla Features
-HeaderFrequency: Frequency
-HeaderExperimental: Experimental
+
+Header: {
+	NewFeatures: New Features
+	Overhauls: Overhauls
+	VanillaFeatures: Vanilla Features
+	Frequency: Frequency
+	Experimental: Experimental
+}
+
 Next: Next
 
 FishingShacks: {
