@@ -1,15 +1,15 @@
 ﻿using FargoSeeds.Content;
-using Microsoft.CodeAnalysis.Options;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using MonoMod.Cil;
+using System.Diagnostics;
 using System.Linq;
+using Terraria;
 using Terraria.GameContent.UI.Elements;
 using Terraria.GameContent.UI.States;
 using Terraria.Localization;
 using Terraria.ModLoader;
 using Terraria.ModLoader.UI;
-using Terraria.ModLoader.UI.Elements;
 using Terraria.UI;
 
 namespace FargoSeeds.UI.WorldGenMenu;
@@ -28,7 +28,7 @@ public sealed class WorldGenUIManager : ILoadable
 
     private static UIWorldCreation? creationUi;
 
-    private static UIElement? container;
+    private static UIElement? entireContainer;
 
     private static UIElement? infoPageContainer;
 
@@ -39,6 +39,8 @@ public sealed class WorldGenUIManager : ILoadable
     private static UIWorldGenTab? vanillaTab;
 
     private static UIWorldGenTab? moddedTab;
+
+    private static UIText? modDescText;
 
     private void SetupGamepadPoints_TEMP_SkipGamepadPoints(On_UIWorldCreation.orig_SetupGamepadPoints orig, UIWorldCreation self, SpriteBatch sb)
     {
@@ -67,7 +69,7 @@ public sealed class WorldGenUIManager : ILoadable
         c.EmitDelegate(
             static (UIElement element) =>
             {
-                container = element;
+                entireContainer = element;
             }
         );
     }
@@ -123,12 +125,12 @@ public sealed class WorldGenUIManager : ILoadable
 
         static void SideTabs_OnUpdate_UpdatePosition(UIElement element)
         {
-            if (container is null)
+            if (entireContainer is null)
             {
                 return;
             }
 
-            var contDims = container.Dimensions;
+            var contDims = entireContainer.Dimensions;
 
             element.Left.Set(contDims.Right + 10, 0f);
             element.Top.Set(contDims.Y, 0f);
@@ -188,6 +190,8 @@ public sealed class WorldGenUIManager : ILoadable
 
         void BuildModdedInfoPage()
         {
+            const float description_height = 50;
+
             moddedInfoPage = new UIElement();
             {
                 moddedInfoPage.Width.Set(0f, 1f);
@@ -196,15 +200,15 @@ public sealed class WorldGenUIManager : ILoadable
 
                 moddedInfoPage.SetPadding(10f);
                 moddedInfoPage.PaddingBottom = 0f;
-                moddedInfoPage.PaddingTop = 0f;
+                moddedInfoPage.PaddingTop = 5f;
             }
 
-            creationUi?.AddDescriptionPanel(moddedInfoPage, 0f, string.Empty);
+            AddDescriptionPanel(moddedInfoPage, description_height);
 
             var above = new UIElement();
             {
                 above.Width.Set(0f, 1f);
-                above.Height.Set(-48, 1f);
+                above.Height.Set(-(description_height + 8f), 1f);
             }
             moddedInfoPage.Append(above);
 
@@ -229,6 +233,41 @@ public sealed class WorldGenUIManager : ILoadable
             list.Activate();
 
             moddedInfoPage.Recalculate();
+        }
+
+        static void AddDescriptionPanel(UIElement parent, float height)
+        {
+            var panel = new UISlicedImage(Main.Assets.Request<Texture2D>("Images/UI/CharCreation/CategoryPanelHighlight"));
+            {
+                panel.HAlign = 0.5f;
+                panel.VAlign = 1f;
+                panel.Width.Set(0f, 1f);
+                panel.Left.Set(0f, 0f);
+                panel.Height.Set(height, 0f);
+                panel.Top.Set(2f, 0f);
+
+                panel.SetSliceDepths(10);
+                panel.Color = Color.LightGray * 0.7f;
+            }
+            parent.Append(panel);
+
+            modDescText = new UIText(Language.GetText("UI.WorldDescriptionDefault"), 0.82f);
+            {
+                modDescText.HAlign = 0f;
+                modDescText.VAlign = 0.5f;
+                modDescText.Width.Set(0f, 1f);
+                modDescText.Height.Set(0f, 1f);
+
+                modDescText.PaddingTop = 6f;
+                modDescText.PaddingLeft = 4f;
+                modDescText.PaddingRight = 4f;
+
+                modDescText.TextOriginY = 0.5f;
+
+                modDescText.WrappedTextBottomPadding = 0f;
+                modDescText.IsWrapped = true;
+            }
+            panel.Append(modDescText);
         }
     }
 
@@ -279,6 +318,9 @@ public sealed class WorldGenUIManager : ILoadable
                 {
                     left.Height.Set(34f, 0f);
                     left.Width.Set(-3f, 0.5f);
+
+                    left.OnMouseOver += ShowOptionDescription;
+                    left.OnMouseOut += ClearOptionDescription;
                 }
                 container.Append(left);
 
@@ -289,11 +331,29 @@ public sealed class WorldGenUIManager : ILoadable
                         right.Height.Set(34f, 0f);
                         right.Width.Set(-3f, 0.5f);
 
+                        right.OnMouseOver += ShowOptionDescription;
+                        right.OnMouseOut += ClearOptionDescription;
+
                         right.HAlign = 1f;
                     }
                     container.Append(right);
                 }
             }
         }
+    }
+
+    private static void ShowOptionDescription(UIMouseEvent evt, UIElement element)
+    {
+        if (element is not UIOptionElement opt)
+        {
+            return;
+        }
+
+        modDescText!.SetText(opt.Description);
+    }
+
+    private static void ClearOptionDescription(UIMouseEvent evt, UIElement element)
+    {
+        modDescText!.SetText(Language.GetText("UI.WorldDescriptionDefault"));
     }
 }

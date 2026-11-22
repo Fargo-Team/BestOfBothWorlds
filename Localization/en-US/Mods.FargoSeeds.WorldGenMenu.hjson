@@ -44,20 +44,12 @@ BothOres: {
 
 WavyCaves: {
 	Label: Cave Overhaul
-	Tooltip:
-		'''
-		Caves have more openings and long-winded paths. 
-		Less digging, more exploring! (The Constant Seed)
-		'''
+	Tooltip: Caves have more openings and long-winded paths. Less digging, more exploring! (The Constant Seed)
 }
 
 RemixUnderworld: {
 	Label: Underworld Overhaul
-	Tooltip:
-		'''
-		Generates a large Ashwood Forest in the middle and moves obsidian houses to the outskirts.
-		Well suited for fighting the Wall of Flesh! (From Remix Seed)
-		'''
+	Tooltip: Generates a large Ashwood Forest in the middle and moves obsidian houses to the outskirts. Well suited for fighting the Wall of Flesh! (From Remix Seed)
 }
 
 LivingTrees: {
@@ -172,11 +164,7 @@ TreeMultiplier: {
 
 MicroMultiplier: {
 	Label: Microbiomes
-	Tooltip:
-		'''
-		Multiplies the amount of Microbiomes (Minecart tracks, Sword Shrines and more)
-		that appear throughout the world.
-		'''
+	Tooltip: Multiplies the amount of Microbiomes (Minecart tracks, Sword Shrines and more) that appear throughout the world.
 }
 
 OceanCaves: {
@@ -221,11 +209,7 @@ MahoganyTrees: {
 
 UndergroundDungeon: {
 	Label: Underground Dungeon
-	Tooltip:
-		'''
-		Generates the Dungeon to be accessed through a decayed Living Tree,
-		rather than being on the surface. (From Drunk Seed)
-		'''
+	Tooltip: Generates the Dungeon to be accessed through a decayed Living Tree, rather than being on the surface. (From Drunk Seed)
 }
 
 MarbleGraniteSwapped: {
