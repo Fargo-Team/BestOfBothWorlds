@@ -49,6 +49,8 @@ public sealed class WorldGenUIManager : ILoadable
 
     private static float vanillaPanelHeight;
 
+    private static float vanillaEntireHeight;
+
     private void SetupGamepadPoints_TEMP_SkipGamepadPoints(On_UIWorldCreation.orig_SetupGamepadPoints orig, UIWorldCreation self, SpriteBatch sb)
     {
         if (infoPageContainer?.HasChild(infoPage) is not true)
@@ -91,6 +93,7 @@ public sealed class WorldGenUIManager : ILoadable
 
         creationUi.Recalculate();
 
+        vanillaEntireHeight = entireContainer!.Dimensions.Height;
         vanillaPanelHeight = infoPageContainer.Dimensions.Height;
 
         infoPage = parentContainer.Children.First();
@@ -168,7 +171,7 @@ public sealed class WorldGenUIManager : ILoadable
         moddedTab?.Enabled = false;
 
         infoPageContainer.Parent.Height.Set(vanillaPanelHeight, 0f);
-        entireContainer!.Height.Set(434f + 18f, 0f);
+        entireContainer!.Height.Set(vanillaEntireHeight, 0f);
 
         infoPageContainer.RemoveChild(moddedInfoPage);
 
@@ -194,8 +197,10 @@ public sealed class WorldGenUIManager : ILoadable
 
         vanillaTab?.Enabled = false;
 
-        infoPageContainer.Parent.Height.Set(408f + 18f, 0f);
-        entireContainer!.Height.Set(434f + 18f + (vanillaPanelHeight - 18f - 408f), 0f);
+        const float height = 450;
+
+        infoPageContainer.Parent.Height.Set(height + 18f, 0f);
+        entireContainer!.Height.Set(vanillaEntireHeight + (vanillaPanelHeight - (height + 18f)), 0f);
 
         infoPageContainer.RemoveChild(infoPage);
 
