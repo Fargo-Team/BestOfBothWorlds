@@ -58,6 +58,8 @@ public sealed class SliderOptionElement(
         if (!slider.IsHeld && priorValue != Value)
         {
             slider.Ratio = Utils.Remap(Value, min, max, 0f, 1f);
+
+            Label.SetText($"{Title}: {Value}");
         }
 
         priorValue = Value;
