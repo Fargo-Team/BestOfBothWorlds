@@ -10,7 +10,12 @@ namespace FargoSeeds.Content;
 
 public sealed class WorldGenManager : ILoadable
 {
-    public record Category(string Name, float Priority);
+    public sealed class Category(string name, float priority)
+    {
+        public string Name = name;
+
+        public float Priority = priority;
+    }
 
     public static readonly Dictionary<Category, List<WorldGenOption>> OPTIONS_BY_CATEGORY = [];
 
