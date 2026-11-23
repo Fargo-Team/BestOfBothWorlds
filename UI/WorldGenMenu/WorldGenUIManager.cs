@@ -200,7 +200,7 @@ public sealed class WorldGenUIManager : ILoadable
         const float height = 450;
 
         infoPageContainer.Parent.Height.Set(height + 18f, 0f);
-        entireContainer!.Height.Set(vanillaEntireHeight + (vanillaPanelHeight - (height + 18f)), 0f);
+        entireContainer!.Height.Set(vanillaEntireHeight + ((height + 18f) - vanillaPanelHeight), 0f);
 
         infoPageContainer.RemoveChild(infoPage);
 
