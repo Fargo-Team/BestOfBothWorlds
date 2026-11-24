@@ -1,6 +1,5 @@
 ﻿using System;
 using FargoSeeds.Content;
-using Microsoft.CodeAnalysis.Options;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using MonoMod.Cil;
@@ -50,6 +49,8 @@ public sealed class WorldGenUIManager : ILoadable
     private static float vanillaPanelHeight;
 
     private static float vanillaEntireHeight;
+
+    private static UIElement? presetContainer;
 
     private void SetupGamepadPoints_TEMP_SkipGamepadPoints(On_UIWorldCreation.orig_SetupGamepadPoints orig, UIWorldCreation self, SpriteBatch sb)
     {
@@ -136,7 +137,33 @@ public sealed class WorldGenUIManager : ILoadable
         }
         sideTabs.Append(moddedTab);
 
+        presetContainer = new UIElement();
+        {
+            presetContainer.Width.Set(300f, 0f);
+
+            presetContainer.OnUpdate += PresetContainerOnUpdateUpdatePosition;
+        }
+
+        AddPresets(presetContainer);
+
         return;
+
+        static void PresetContainerOnUpdateUpdatePosition(UIElement element)
+        {
+            if (infoPageContainer is null)
+            {
+                return;
+            }
+
+            var contDims = infoPageContainer.Dimensions;
+
+            element.Left.Set(contDims.Left - 10 - element.Width.Pixels, 0f);
+            element.Top.Set(contDims.Y, 0f);
+
+            element.Height.Set(contDims.Height, 0f);
+
+            element.Recalculate();
+        }
 
         static void SideTabs_OnUpdate_UpdatePosition(UIElement element)
         {
@@ -180,6 +207,8 @@ public sealed class WorldGenUIManager : ILoadable
             infoPageContainer.Append(infoPage);
         }
 
+        creationUi!.RemoveChild(presetContainer);
+
         entireContainer.Recalculate();
     }
 
@@ -210,6 +239,8 @@ public sealed class WorldGenUIManager : ILoadable
 
             infoPageContainer.Append(moddedInfoPage);
         }
+
+        creationUi!.Append(presetContainer);
 
         entireContainer.Recalculate();
 
@@ -329,7 +360,7 @@ public sealed class WorldGenUIManager : ILoadable
 
     private static void AddOptions(UIList list, string query = "")
     {
-        var categories = WorldGenManager.CurrentOptions.Keys.ToList().OrderBy(c => c.Priority);
+        var categories = WorldGenManager.OPTIONS_BY_CATEGORY.Keys.ToList().OrderBy(c => c.Priority);
 
         // TODO: Search logic
         foreach (var category in categories)
@@ -378,7 +409,7 @@ public sealed class WorldGenUIManager : ILoadable
             }
             header.Append(resetButton);
 
-            var sorted = WorldGenManager.CurrentOptions[category].OrderBy(o => o.Priority).ToList();
+            var sorted = WorldGenManager.OPTIONS_BY_CATEGORY[category].OrderBy(o => o.Priority).ToList();
 
             // TODO: Fuzzy matching
             if (!string.IsNullOrEmpty(query))
@@ -421,6 +452,20 @@ public sealed class WorldGenUIManager : ILoadable
                 }
             }
         }
+    }
+
+    private static void AddPresets(UIElement container)
+    {
+        var panel = new UIPanel();
+        {
+            panel.Width.Set(0f, 1f);
+            panel.Height.Set(0f, 1f);
+
+            panel.BackgroundColor = new Color(33, 43, 79) * 0.8f;
+        }
+        container.Append(panel);
+
+
     }
 
     private static void ShowOptionDescription(UIMouseEvent evt, UIElement element)
