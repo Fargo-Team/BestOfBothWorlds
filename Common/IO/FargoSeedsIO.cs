@@ -6,5 +6,5 @@ namespace FargoSeeds.Common.IO;
 
 public static class FargoSeedsIO
 {
-    public static string SavePath => Path.Combine(Main.SavePath, "BestOfBothWorlds")
+    public static string SavePath => Path.Combine(Main.SavePath, "BestOfBothWorlds");
 }
