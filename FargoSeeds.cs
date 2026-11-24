@@ -2,112 +2,97 @@ using FargoSeeds.UI.WorldGenMenu;
 using Microsoft.Xna.Framework;
 using System;
 using System.Collections.Generic;
+using System.Linq;
+using FargoSeeds.Content;
 using Terraria;
-using Terraria.Localization;
 using Terraria.ModLoader;
 
-namespace FargoSeeds
+namespace FargoSeeds;
+
+public class FargoSeeds : Mod
 {
-	public class FargoSeeds : Mod
-	{
-        public static Mod Mod;
-        public override void Load()
-        {
-            Mod = this;
-            base.Load();
-        }
-        public override object Call(params object[] args)
-        {
-            try
-            {
-                string code = args[0].ToString();
+    public static Mod Mod;
 
-                switch (code)
+    public override void Load()
+    {
+        Mod = this;
+    }
+
+    public override object Call(params object[] args)
+    {
+        if (Main.dedServ)
+        {
+            return null!;
+        }
+
+        try
+        {
+            var @case = args[0] as string;
+
+            switch (@case)
+            {
+                case "AddToggle":
                 {
-                    case "AddWorldGenToggle":
-                        {
-                            if (args[1].GetType() != typeof(string)) // Your mod name
-                                break;
-                            if (args[2].GetType() != typeof(string)) // Toggle Category
-                                break;
-                            if (args[3].GetType() != typeof(string)) // Toggle Title
-                                break;
-                            if (args[4].GetType() != typeof(string)) // Toggle Description
-                                break;
-                            if (args[5].GetType() != typeof(Color)) // Toggle title text color
-                                break;
-                            if (args[6].GetType() != typeof(string)) // Toggle icon texture path
-                                break;
-                            if (args[7].GetType() != typeof(bool)) // Default toggle value
-                                break;
-                            if (args[8].GetType() != typeof(Action<bool>)) // Toggle action (should flip your bool that determines the given worldgen option
-                                break;
-                            // optional arg
-                            bool emode = false;
-                            float priority = 1f;
-                            if (args.Length > 9)
-                            {
-                                if (args[9].GetType() != typeof(bool)) // Whether this should be recommended for Eternity Mode
-                                    break;
-                                emode = (bool)args[9];
-
-                                if (args.Length > 10)
-                                {
-                                    if (args[10].GetType() != typeof(float)) // Priority
-                                        break;
-                                    priority = 1f;
-                                }
-                            }
-                            WorldGenUIManager.AddToggle(ModLoader.GetMod((string)args[1]), Language.GetText((string)args[2]), Language.GetText((string)args[3]), Language.GetText((string)args[4]), (Color)args[5], (string)args[6], (bool)args[7], (Action<bool>)args[8], emode, priority);
-                        }
-                        break;
-                    case "AddWorldGenSlider":
-                        {
-                            if (args[1].GetType() != typeof(string)) // Your mod name
-                                break;
-                            if (args[2].GetType() != typeof(string)) // Toggle Category
-                                break;
-                            if (args[3].GetType() != typeof(string)) // Toggle Title
-                                break;
-                            if (args[4].GetType() != typeof(string)) // Toggle Description
-                                break;
-                            if (args[5].GetType() != typeof(Color)) // Toggle title text color
-                                break;
-                            if (args[6].GetType() != typeof(string)) // Toggle icon texture path
-                                break;
-                            if (args[7].GetType() != typeof(float)) // Default slider value
-                                break;
-                            if (args[8].GetType() != typeof(Action<float>)) // Toggle action (should flip your bool that determines the given worldgen option
-                                break;
-                            if (args[9].GetType() != typeof(Action<float>)) // Whether the slider should be locked to integers
-                                break;
-                            if (args[10].GetType() != typeof(List<float>)) // Slider range
-                                break;
-                            if (((List<float>)args[9]).Count != 2) // Range must have two elements (min, max)
-                                break;
-                            WorldGenUIManager.AddSlider(ModLoader.GetMod((string)args[1]), Language.GetText((string)args[2]), Language.GetText((string)args[3]), Language.GetText((string)args[4]), (Color)args[5], (string)args[6], (float)args[7], (Action<float>)args[8], (bool)args[9], (List<float>)args[10]);
-                        }
-                        break;
-                    case "SetCategoryPriority":
-                        {
-                            if (args[1].GetType() != typeof(string)) // Your mod name
-                                break;
-                            if (args[2].GetType() != typeof(string)) // Toggle Category
-                                break;
-                            if (args[3].GetType() != typeof(float)) // The new priority
-                                break;
-                            WorldGenUIManager.ChangeCategoryPriority(Language.GetText((string)args[2]), (float)args[3]);
-                        }
-                        break;
+                    WorldGenManager.AddToggleOption(
+                        (Mod)args[1],                 // Calling Mod
+                        (string)args[2],              // Name (Localization Key)
+                        (string)args[3],              // Description (Localization Key)
+                        GetCategory((string)args[4]), // Category (Localization Key) (One will be created if the category is not found)
+                        (Action<bool>)args[5],        // Application event
+                        (string)args[6],              // Icon Path
+                        (float)args[7],               // Priority
+                        (bool)args[8]                 // Default value
+                    );
                 }
+                break;
 
-            }
-            catch (Exception e)
-            {
-                Logger.Error("Call Error: " + e.StackTrace + e.Message);
-            }
+                case "AddSlider":
+                {
+                    WorldGenManager.AddSliderOption(
+                        (Mod)args[1],                 // Calling Mod
+                        (string)args[2],              // Name (Localization Key)
+                        (string)args[3],              // Description (Localization Key)
+                        GetCategory((string)args[4]), // Category (Localization Key) (One will be created if the category is not found)
+                        (Action<float>)args[5],       // Application event
+                        (string)args[6],              // Icon Path
+                        (float)args[7],               // Priority
+                        (float)args[8],               // Default value
+                        (float)args[9],               // Min
+                        (float)args[10],              // Max
+                        (int)args[11]                 // Steps (how many 'ticks' the slider has (-1 if smooth))
+                    );
+                }
+                break;
 
-            return base.Call(args);
+                case "ChangeCategoryPriority":
+                {
+                    var categoryKey = (string)args[1];
+
+                    if (WorldGenManager.OPTIONS_BY_CATEGORY.Keys.ToList().Find(c => c.Name == categoryKey) is not { } category)
+                    {
+                        throw new KeyNotFoundException("Category was not present!");
+                    }
+
+                    category.Priority = (float)args[2];
+                }
+                break;
+            }
         }
-	}
+        catch (Exception e)
+        {
+            Logger.Error("Mod.Call Error: " + e.StackTrace + e.Message);
+        }
+
+        return null!;
+
+        static WorldGenManager.Category GetCategory(string categoryKey)
+        {
+            if (WorldGenManager.OPTIONS_BY_CATEGORY.Keys.ToList().Find(c => c.Name == categoryKey) is not { } category)
+            {
+                category = new WorldGenManager.Category(categoryKey, 1f);
+            }
+
+            return category;
+        }
+    }
 }
