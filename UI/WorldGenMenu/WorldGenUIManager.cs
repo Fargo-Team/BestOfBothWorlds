@@ -329,7 +329,7 @@ public sealed class WorldGenUIManager : ILoadable
 
     private static void AddOptions(UIList list, string query = "")
     {
-        var categories = WorldGenManager.OPTIONS_BY_CATEGORY.Keys.ToList().OrderBy(c => c.Priority);
+        var categories = WorldGenManager.CurrentOptions.Keys.ToList().OrderBy(c => c.Priority);
 
         // TODO: Search logic
         foreach (var category in categories)
@@ -378,7 +378,7 @@ public sealed class WorldGenUIManager : ILoadable
             }
             header.Append(resetButton);
 
-            var sorted = WorldGenManager.OPTIONS_BY_CATEGORY[category].OrderBy(o => o.Priority).ToList();
+            var sorted = WorldGenManager.CurrentOptions[category].OrderBy(o => o.Priority).ToList();
 
             // TODO: Fuzzy matching
             if (!string.IsNullOrEmpty(query))

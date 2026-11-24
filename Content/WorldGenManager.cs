@@ -1,7 +1,10 @@
-﻿using System;
+﻿using Microsoft.Xna.Framework.Graphics;
+using Newtonsoft.Json;
+using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Threading.Tasks;
-using Microsoft.Xna.Framework.Graphics;
+using FargoSeeds.Common.IO;
 using Terraria;
 using Terraria.ModLoader;
 using Terraria.WorldBuilding;
@@ -10,12 +13,16 @@ namespace FargoSeeds.Content;
 
 public sealed class WorldGenManager : ILoadable
 {
+    public record OptionPreset(string Name, Dictionary<string, object> Options);
+
     public sealed class Category(string name, float priority)
     {
         public string Name = name;
 
         public float Priority = priority;
     }
+
+    private static readonly List<OptionPreset> option_presets = [];
 
     public static readonly Dictionary<Category, List<WorldGenOption>> OPTIONS_BY_CATEGORY = [];
 
@@ -80,13 +87,79 @@ public sealed class WorldGenManager : ILoadable
     }
 
     // I yearn for daybreak
-    void ILoadable.Load(Mod _)
+    void ILoadable.Load(Mod mod)
     {
         On_WorldGen.CreateNewWorld += CreateNewWorld_ApplyOptions;
+
+        LoadPresets();
     }
 
     void ILoadable.Unload()
     { }
+
+    private static void LoadPresets()
+    {
+        Directory.CreateDirectory(FargoSeedsIO.SavePath);
+        var files = Directory.GetFiles(FargoSeedsIO.SavePath);
+
+        foreach (var path in files)
+        {
+            var name = Path.GetFileNameWithoutExtension(path);
+
+            var json = File.ReadAllText(path);
+
+            var options = JsonConvert.DeserializeObject<Dictionary<string, object>>(json)!;
+
+            var preset = new OptionPreset(name, options);
+
+            option_presets.Add(preset);
+        }
+    }
+
+    private static void SavePreset(OptionPreset preset)
+    {
+        var path = Path.Combine(FargoSeedsIO.SavePath, $"{preset.Name}.json");
+        var json = JsonConvert.SerializeObject(preset.Options, Formatting.Indented);
+
+        File.WriteAllText(path, json);
+    }
+
+    public static void ApplyPreset(string name)
+    {
+        if (option_presets.Find(p => p.Name == name) is not { } preset)
+        {
+            return;
+        }
+
+        foreach (var options in OPTIONS_BY_CATEGORY.Values)
+        foreach (var opt in options)
+        {
+            opt.Value = opt.DefaultValue;
+
+            if (preset.Options.TryGetValue(opt.Name, out var value))
+            {
+                opt.Value = value;
+            }
+        }
+    }
+
+    public static void AddPreset(string name)
+    {
+        var preset = new OptionPreset(name, []);
+
+        foreach (var options in OPTIONS_BY_CATEGORY.Values)
+        foreach (var opt in options)
+        {
+            if (opt.Value != opt.DefaultValue)
+            {
+                preset.Options.Add(opt.Name, opt.Value!);
+            }
+        }
+
+        option_presets.Add(preset);
+
+        SavePreset(preset);
+    }
 
     private static Task CreateNewWorld_ApplyOptions(On_WorldGen.orig_CreateNewWorld orig, GenerationProgress progress)
     {
